@@ -1,0 +1,559 @@
+---
+title: "R Commands and Cheat Sheet, 1-15-2020"
+---
+
+#install packagaes once
+install.packages("tidyverse")
+#load packages needed for this; needs to be done every time
+#these are all part of tidyverse: Readr, dplyr, ggplot2
+#for working with dates
+library(lubridate)
+#themes for data viz
+library(ggthemes) 
+
+#---------------------------------------------#
+#Reading in Data#
+#---------------------------------------------#
+
+#Import using Rio. Make sure ArkCensus is in your working directory!
+ArkCensus <- rio::import("ArkCensus.csv")
+
+#Getting it from a subdirectory ./Data/Filename.csv
+StudentLoans3 <- rio::import('./Data/AR2016_SMALL.csv')
+
+#Using the Finder function
+options(header=FALSE, stringsAsFactors = FALSE,fileEncoding="utf-8")
+ArkCensus1 <- read.csv(file.choose(), stringsAsFactors = FALSE)
+
+#read_lines
+#read_csv
+#NYT <- read_lines("./Data/NYT1_26.txt")
+# read files - two versions. Read CSV needs this  quote="\"", code in 10-18
+# StudentLoan2017 <- read.csv("~/Dropbox/Student-Loan-Data-R/College Scorecard 9-2018/MERGED2016_17_PP.csv", sep=',', header = TRUE, fill = TRUE, quote="\"", stringsAsFactors=F)
+#https://stackoverflow.com/questions/37020340/error-in-reading-a-csv-file-with-read-table
+Census <- read_csv("ACS16_DP03.csv", col_names = TRUE, col_types = NULL, stringsAsFactors=F)
+Census1 <- read_csv("ACS16_DP03.csv",stringsAsFactors=F)
+
+check this on whether I need to assign this trailing code
+earnings <- read.csv("Employee_Earnings_Report_2014.csv", stringsAsFactors=FALSE) 
+
+# Why the stringsAsFactors=FALSE? Because you're telling to interpret the text in the spreadsheet as a String, not a Factor 
+# Why is R obsessed with Factors? Blame statisticians.
+
+
+#Importing Numeric and Text Fields
+library(readxl)
+ARDebt1 <- read_xlsx ("~/Dropbox/Student-Loan-Data-R/ARDebt.xlsx",col_names = TRUE, 
+                      col_types = c("text", "text", "text", "text", "text", "text", "text", "text",
+                                    "numeric", "numeric", "numeric", "numeric", "numeric",
+                                    "numeric", "numeric", "numeric", "numeric", "numeric",
+                                    "numeric", "numeric", "numeric", "numeric", "numeric",
+                                    "numeric", "numeric", "numeric", "numeric", "numeric",
+                                    "numeric", "numeric", "numeric", "numeric", "numeric",
+                                    "numeric", "numeric", "numeric", "numeric", "numeric",
+                                    "numeric", "numeric")
+                                    
+#gsub
+#Create new column with a formula (Convert OT column into numeric first)
+#this strips out $ and , comma
+Crime$Murder_Rape <- gsub("\\$", "", Crime$Murder_Rape)
+Crime$Murder_Rape <- as.numeric(Crime$Murder_Rape)
+
+
+#---------------------------------------------#
+#   Data Exploration and Management                       
+#---------------------------------------------#
+
+#Analysis of Data
+glimpse(ARDebt1)
+summary(ARDebt1)
+
+
+### How many rows?  
+nrow(Crime)
+### Let's look at the first five rows
+head(Crime)
+
+#glimpse
+# view structure of data
+glimpse(Income)
+
+#look at the structure of the data frame you just created
+str(Income)
+
+#names of all the columns in your data frame?
+names(mtcars)
+
+#Shortcut Commands
+* Tab - Autocomplete
+* Control (or Command) + UP arrow - last lines run
+* Control (or Command) + Enter - Runs current or selected lines of code in the top left box of RStudio
+Shift + Control (or Command) +P - Reruns previous region code
+
+To quit the R program the command is
+> q()
+
+
+#Convert to data frame
+Trump <- as.data.frame(df4)
+
+#View specific columns in a large dataset
+View(data.frame (AR2016ALL$INSTNM, AR2016ALL$DEBT_MDN)
+
+#If you need to rename a specific column
+colnames(Income)[15] <- "Sum 74+75"
+
+colnames(Income)[11] <- "VC82"
+
+names(bostonsnow)[2] <- "TotalSnow"
+
+#Covert Factors to numeric values
+If you need to change the data type for any variable, use the following functions:
+
+as.character converts to a text string.
+as.numeric converts to a number that may include decimal fractions (dbl).
+as.factor converts to a categorical variable.
+as.integer converts to an integer
+as.Date converts to a date
+as.POSIXct converts to a full date and timestamp.
+So this code will convert alert_date codes to text:
+
+# convert alert_date to text
+ca_discipline$alert_date <- as.character(ca_discipline$alert_date)
+
+dat.turnover$a <- as.numeric(dat.turnover$a)
+
+Income$VC03 <- as.numeric(Income$VC03)
+Income$VC74 <- as.numeric(Income$VC74)
+etc
+#Convert numbers to "numeric" data
+ArkCrime2017[2:13] <- lapply(ArkCrime2017[2:13], as.numeric)
+
+#convert to absolute value
+AOC_table[2] <- lapply(AOC_table[2], abs)
+
+When referring to values entered as text, or to dates, put them in quote marks, like this: "United States", or "2016-07-26". Numbers are not quoted.
+When entering two or more values as a list, combine them using the function c, for combine, with the values separated by commas, for example: c("2017-07-26","2017-08-04")
+As in a spreadsheet, you can specify a range of values with a colon, for example: c(1:10) creates a list of integers (whole numbers) from one to ten.
+
+
+#---------------------------------------------#
+#   Data Processing - Cleaning - NA NAs       #
+#---------------------------------------------#
+
+#Remove rows with NA
+newdata <- ArkCensus[-c(1,3,5), ] 
+View(newdata)
+
+#Convert numbers to "numeric" data
+ArkCensus[2:4] <- lapply(ArkCensus[2:4], as.numeric)
+View(ArkCensus)
+
+# gsub
+# str_replace
+#
+#Clean and Strip Out Characters (Andrew Ba Tran)
+#Change column to number format (first you have to strip out the $)
+#The $ is a special character
+earnings$TOTAL.EARNINGS <- gsub("\\$", "", earnings$TOTAL.EARNINGS)
+
+str_replace() for the underlying implementation.
+
+#This finally stripped out the stray characters
+AOC4$tag2 <- str_replace_all(AOC4$tag2, pattern=fixed('")'), replacement=fixed('') )
+AOC4$tag3 <- str_replace_all(AOC4$tag3, pattern=fixed('")'), replacement=fixed('') )
+AOC4$tag4 <- str_replace_all(AOC4$tag4, pattern=fixed('")'), replacement=fixed('') )
+
+Examples
+fruits <- c("one apple", "two pears", "three bananas")
+str_remove(fruits, "[aeiou]")
+#> [1] "ne apple"     "tw pears"     "thre bananas"
+
+remove all special characters
+gsub("[[:punct:]]", "", c)
+
+remove all control characters
+AOC4$tag1a <- gsub("[[:cntrl:]]", "", AOC4$tag1)
+[[:cntrl:]]
+
+#Rename specific strings
+#str_replace_all(test.vector, pattern=fixed('-'), replacement=fixed(':') )
+#https://dereksonderegger.github.io/570L/13-string-manipulation.html
+AOC4$tagclean <- str_replace_all(AOC4$tagclean, pattern=fixed('c"EidMubarak"'), replacement=fixed('EidMubarak') )
+
+#This cleans out all instances of c( - need to refine
+AOC4$tag1 <- dplyr::mutate_if(tibble::as_tibble(AOC4$tag1), 
+                                is.character, 
+                                stringr::str_replace_all, pattern = "["c(""]", replacement = "")
+
+
+#This Removes Brackets gsub("[()]", "", x)
+AOC4$tag1 <- gsub("[()]", "", AOC4$tag1)
+
+#Booleans
+& means AND, in Boolean logic.
+| means OR, in Boolean logic.
+! means NOT, in Boolean logic.
+
+#---------------------------------------------#
+#Selecting data
+
+opiatedata%>%select(LASTNAME, DEATHDATE, GENDER, RACE)
+Census%>%select(LASTNAME, DEATHDATE, GENDER, RACE)
+
+#Select a subset of columns to make a smaller table
+#OR - a range and range
+df1 <- select(AR2016ALL, V4:V8, V10:20)
+
+#returns a subset but all null values
+AR2016_SMALL <- select(AR2016ALL, V4:V7, V12, V274, V529:V622)
+
+#Pipes - pipe %>%
+#CMD +  Shift + M
+#Shortcut to eliminate naming of dataframe in filter stacks
+filter(murders, State=="District of Columbia") %>% 
+  group_by(Year) %>% 
+  summarize(total=n()) %>%    
+  arrange(desc(total)) %>% 
+  head()
+
+Sort by column Murder descending  
+Crime <- Crime[order(-Crime$Murder),]
+View(Crime)
+
+
+# write.csv
+
+#Write Export output this file to a CSV or Excel  write.csv or write.excel
+write.csv(AR2016_SMALL,"AR2016_SMALL.csv")
+
+#---------------------------------------------#
+#   Filters                   
+#---------------------------------------------#
+
+#dplyr
+
+#Here are some of the most useful functions in dplyr:
+
+#Create separate table with just the top five counties' crime rate: dplyr has a "top_n" function that i find handy
+Top_5_county_rates <- Arkansas_Crime %>%
+  select(County, violent_crime_rate_per10k) %>%
+  top_n(5, violent_crime_rate_per10k) %>%
+  arrange(desc(violent_crime_rate_per10k))
+
+select Choose which columns to include.
+filter Filter the data.
+arrange Sort the data, by size for continuous variables, by date, or alphabetically.
+group_by Group the data by a categorical variable.
+
+#add a filter to get just women who died
+#note the double equal sign on the filter 
+opiatedata%>%select(LASTNAME, DEATHDATE, GENDER, RACE)%>%filter(GENDER=="F")
+
+#filter for two operators
+df3 <- filter(murders, Relationship_label %in% c("Husband", "Boyfriend")
+
+#filter to exclude something using != operator
+murders_filtered <- filter(murders, OffAge!=999)
+
+
+#---------------------------------------------#
+#   Math                   
+#---------------------------------------------#
+
+
+###Summary Statistics
+Here is a quick way to view the range of your data  
+summary(Crime)
+
+Good R Tutorial with Basic Statistics
+https://www.princeton.edu/~otorres/sessions/s2r.pdf
+
+###Summary Statistics
+Here is a quick way to view the range of your data  
+
+```{R}
+summary(Crime)
+```
+
+arrange Sort the data, by size for continuous variables, by date, or alphabetically.
+group_by Group the data by a categorical variable.
+summarize Summarize, or aggregate (for each group if following group_by). Often used in conjunction with functions including:
+mean(x) Calculate the mean, or average, for variable x.
+median(x) Calculate the median.
+max(x) Find the maximum value.
+min(x) Find the minimum value.
+sum(x) Add all the values together.
+n() Count the number of records. Here there isn’t a variable in the brackets of the function, because the number of records applies to all variables.
+n_distinct(x) Count the number of unique values in variable x.
+mutate Create new column(s) in the data, or change existing column(s).
+rename Rename column(s).
+bind_rows Merge two data frames into one, combining data from columns with the same name.
+
+Math Functions
+median()
+summary()
+TotalViolent2017 <- sum(Census$Violent_Crime)
+AvgViolent2017 <- mean(Census$Violent_Crime)
+MedianViolent2017 <- median(Census$Violent_Crime)
+
+#Standard Deviation
+sd(Census$Per10000, na.rm=TRUE)
+
+
+percent_change <- function(first_number, second_number) {
+  pc <- (second_number-first_number)/first_number*100
+  return(pc)
+}
+
+percent_change(100,150)
+
+percent_change <- function(first_number, second_number) {
+  pc <- (second_number-first_number)/first_number*100
+  return(pc)
+}
+
+dataset$New.Column <- dataset$Column subtracted by dataset$Another.Column
+Crime$Murder.Robbery <- Crime$Murder + Crime$Robbery
+
+
+
+percent_change(100,150)
+## [1] 50
+This is what’s happening in the code above:
+* percent_change is the name of the function, and assigned to it is the function function()
+* Two variables are necessary to be passed to this function, first_number and second_number
+* A new object pc is created using some math calculating percent change from the two variables passed to it
+* the function return() assigns the result of the math to percent_change from the first line
+Build enough functions and you can save them as your own package.
+
+#Standard Deviation - and it knocks out NAs
+sd(ArkCrime2017$Per10000, na.rm=TRUE)
+
+
+# Create a subset chart to show the top 10 by Pct Change
+TopTags <- filter(AOC_table, (Freq > 2) & (Freq < 36))
+
+#To quickly format into percents, load
+install.packages("formattable")
+library(formattable)
+
+ArkCensus$Pct2017 <- percent(ArkCensus$Pct2017)
+
+View(ArkCensus)
+
+#Mean Bing Score by Year & Pct Chg
+Mean_Bing <- EF_type2 %>%
+  filter(year!=2019) %>%
+  group_by(year) %>% 
+  summarize(mean = mean(score)) %>% 
+  mutate(adj_mean = (mean)+10) %>% 
+  mutate(pct_change = (adj_mean/lag(adj_mean)-1) * 100)
+  
+quantile(Immigrants$ForeignPer, c(0.1, 0.2, 0.3, 0.4,0.5, 0.6, 0.7, 0.8, 0.9), na.rm=TRUE)
+10%        20%        30%        40%        50%        60%        70%        80% 
+0.01815276 0.04795991 0.08415216 0.12211798 0.16310981 0.21134868 0.27006931 0.34238683 
+90% 
+0.41473971   
+
+#-------------------------------------------------------------------#
+#    Charts - GGPLOT
+#-------------------------------------------------------------------#  
+
+#Change the legend label %>% %>% %>% %>% 
+ labs(fill = "Publication Name") +
+ 
+#Change angle of x axis
+  theme(axis.text.x = element_text(angle=90)) +
+  
+#Formatting options explained well
+https://www.datanovia.com/en/blog/ggplot-legend-title-position-and-labels/#remove-legend
+
+Remove legend:
+p + theme(legend.position = "none")
+
+
+#Charting
+https://www.rdocumentation.org/packages/ggplot2/versions/1.0.1/topics/geom_bar
+
+http://www.cookbook-r.com/Graphs/Bar_and_line_graphs_(ggplot2)/
+  
+  
+  #Build a chart
+  library(ggplot2)
+
+#we'll make one based on the number of deaths each year
+deaths_by_year <- opiatedata%>%group_by(deathyr)%>%summarize(numdeaths=n())
+#oftentimes you will need to tell R exactly what order to present the bars in the chart
+#you do this by setting the factor levels on the field (in thise case by year)
+#note that you have to put the years in the opposite order than you want
+deaths_by_year$deathyr <- factor(deaths_by_year$deathyr, levels=c("2015", "2014", "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006"))
+#then we create a dataframe to chart
+#I tend to use the same name, but tack on "_chart"" at the end to help understand my workflow
+#right after "ggplot" you put in the name of the dataframe where you're getting the data
+#the x value is the groups
+#the y value is the numeric value that determines the length of the bars
+#
+deaths_by_year_chart <- ggplot(deaths_by_year, aes(x = deathyr, y = numdeaths)) + 
+  geom_bar(stat = "identity") +
+  coord_flip() +     #this makes it a horizontal bar chart instead of vertical
+  labs(title = "Number of opiate deaths by year in MN", 
+       subtitle = "2006-2015",
+       caption = "Graphic by MaryJo Webster",
+       x="Year",
+       y="Number of deaths")
+#here's where we tell it to plot the chart in the window below
+#note you can right-mouse click on the chart and save it to your desktop
+plot(deaths_by_year_chart)
+
+#---------------------------------------------#
+#   Images - Embedding - Formatting                  
+#---------------------------------------------#
+
+Week 5 Publishing
+http://learn.r-journalism.com/en/publishing/
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+*Images*
+#Standard Image insert  -- text can go in brackets []
+#![ ](Images-Sabew/Bea - GDP1.jpeg)#
+
+#Size your jpegs:
+#<img src="Images-Sabew/Bea logo.jpg" width="200" height="200" />
+#<img src="Images-Sabew/UARK Logo vert NEW copy.jpg" width="200" height="200" />
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+
+
+R Markdown Formatting
+Another easy way to do this is to just use HTML tags. Adding <br> will give a single line break and I've used that when, for whatever reason, using the  (two-space indentation) is ignored.
+
+https://github.com/rstudio/cheatsheets/raw/master/rmarkdown-2.0.pdf
+
+library(rmarkdown)
+render("input.Rmd", pdf_document())
+
+## I Can't Leave Well Enough Alone
+```{r, echo=FALSE}
+     knitr::include_graphics('Dplyr3.png')
+```
+
+add local image file in R presentation
+
+https://stackoverflow.com/questions/31886610/add-local-image-file-in-r-presentation
+<img src="/Users/name/folder/xyz.png"; style="max-width:280px;float:right;">
+
+0
+
+The 'imager' package makes this pretty easy:
+
+library(imager)
+myimg <- load.image("<pathto>/file.png")
+plot(myimg)
+
+#---------------------------------------------#
+#       Joining data frames              
+#---------------------------------------------#
+
+
+#Another common issue for us data journalists is having to join two datasets together on one or more common fields/columns. Just like SQL, you can do an inner_join (return only matching records) or left_join (return all records from the first table listed and only those that match from the second table) using the dplyr package. Here's the official documentation on joining. In the code below you can replace the two instances of "fieldname" with the correct names of columns in your two tables that match. And replace "table1" and "table2" with the names of the two data frames you are joining. In my example, "newtable" is the name of the new data frame I'm creating from this join.
+
+newtable <- inner_join(table1, table2, by=c("fieldname"="fieldname"))
+
+
+
+
+#---------------------------------------------#
+#   Ron Campbell Lecture              
+#---------------------------------------------#
+
+https://github.com/roncampbell/NICAR2018/blob/master/Intro%20to%20R.md
+Load tidyverse package. graphics. string manipulation
+library(tidyverse)
+Assignment operator. Assign a variable
+<-  option + -
+alt + -
+
+
+
+
+#---------------------------------------------#
+#   #Quick Data Viz                           #
+#---------------------------------------------#
+
+
+#Basic graphs
+plot(ArkCo_Income_2017$median_income)
+
+hist(ArkCo_Income_2017$median_income)  
+boxplot(ArkCo_Income_2017$median_income)
+barplot(ArkCo_Income_2017$median_income)
+barplot(sort(ArkCo_Income_2017$median_income, decreasing = TRUE))
+
+
+#---------------------------------------------#
+#   Tutorials                                 #
+#---------------------------------------------#
+All Cheat Sheets
+https://www.rstudio.com/resources/cheatsheets/
+
+#MaryJo Webster tutorials
+
+http://mjwebster.github.io/DataJ/R_tutorials/opiate_deaths.nb.html
+https://github.com/mjwebster/R_tutorials/blob/master/Using_R.Rmd
+
+#Aldhous' R tutorial
+http://paldhous.github.io/NICAR/2018/r-analysis.html
+
+Ron Campbell Lecture
+https://github.com/roncampbell/NICAR2018/blob/master/Intro%20to%20R.md
+
+R Part 2
+http://paldhous.github.io/NICAR/2018/r-analysis.html
+
+R3
+https://github.com/Caelainn/R3_NICAR18
+
+#Excellent Tutorial Spelling out Excel and Comparable Commands in R
+First Data analysis in R
+https://trendct.org/2015/06/12/r-for-beginners-how-to-transition-from-excel-to-r/
+
+https://docs.google.com/presentation/d/1O0eFLypJLP-PAC63Ghq2QURAnhFo6Dxc7nGt4y_l90s/edit#slide=id.g1bc441664e_0_59
+
+
+Andrew Ba Tran first Data Analysis Steps Using R
+https://docs.google.com/presentation/d/1O0eFLypJLP-PAC63Ghq2QURAnhFo6Dxc7nGt4y_l90s/edit#slide=id.p
+
+
+Tirelli handout
+http://r4ds.had.co.nz/data-visualisation.html
+
+http://www.r-project.org
+http://www.johndcook.com
+http://bostondatacommunity.org/onlinecourses/
+http://www.computerworld.com/article/2497143/business-intelligence/business-intelligence-beginner-s-guide-to-r-introduction.html
+@abtran
+
+
+Simply Statistics Blog Explains R
+https://simplystatistics.org/post/
+
+#Charting
+https://www.rdocumentation.org/packages/ggplot2/versions/1.0.1/topics/geom_bar
+
+http://www.cookbook-r.com/Graphs/Bar_and_line_graphs_(ggplot2)/
+
+Base R Cheat Sheet
+https://www.povertyactionlab.org/sites/default/files/r-cheat-sheet.pdf
+
+
