@@ -118,14 +118,20 @@ ArkCensus %>%
 #--Control (or Command) + UP arrow - last lines run
 #Control (or Command) + Enter - Runs current or selected lines of code in the top left box of RStudio
 #Shift + Control (or Command) +P - Reruns previous region code
+
 #
+#Question:
+#1: What is the Median Household Income for Washington County, Arkansas
+#Answer:
+ArkCensus %>% 
+  select(Geography, Median_Househ_Income) %>% 
+  filter(Geography =="Washington County, Arkansas")
 #
 #Question:
 #1: What is the Median Household Income for Washington County, Arkansas
 #2: Median Household Income for Benton County, Arkansas
 #3: Median Household Income for Pulaski County, Arkansas
 #4: Median Household Income for Arkansas
-#
 #
 #With the Statewide Median Income, 
 #Build a table with all counties above that median income
@@ -136,28 +142,48 @@ AboveIncome <- ArkCensus %>%
   filter(Median_Househ_Income > 42336) %>% 
   arrange(desc(Median_Househ_Income))
 #
+#
 #  dplyr 
 #select Choose which columns to include.
 #filter Filter the data.
 #arrange Sort the data, by size for continuous variables, by date, or alphabetically.
 #group_by Group the data by a categorical variable.
+#Create a table of counties with the lowest quartile in income
 #
 #Question:
 #1: Create a table of counties with the lowest quartile in income
 #2: Find all Counties with 20% more earning $25,000 or less
 #
+#1: Answer: Create a table of counties with the lowest quartile in income 
+AboveIncome <- ArkCensus %>% 
+   select(Geography, Median_Househ_Income) %>% 
+  filter(Median_Househ_Income < 34031) %>% 
+  arrange(Median_Househ_Income)
+#
+#2: Answer: Find all Counties with 20% more earning $25,000 or less
+ArkCensus %>% 
+  select(Geography, Pct_Income_to_25k) %>% 
+  filter(Pct_Income_to_25k >20) %>% 
+  arrange(desc(Pct_Income_to_25k))
+
 #Summary of the low income distribution
 summary(ArkCensus$Pct_Income_to_25k)
+
 #
 #Which county has the lowest percentage of population in this low income bracket?
 ArkCensus %>% 
   select(Geography, Pct_Income_to_25k) %>% 
   filter(Pct_Income_to_25k==8.80) %>% 
   arrange(desc(Pct_Income_to_25k))
-#
-#Question:
-#1: #Which county has the highest percentage of population in this low income bracket?
 
+#Question:
+#1: Which County is the highest?
+#
+#1: Answer: Which county has the highest percentage of population in this low income bracket?
+ArkCensus %>% 
+  select(Geography, Pct_Income_to_25k) %>% 
+  filter(Pct_Income_to_25k==22.30) %>% 
+  arrange(desc(Pct_Income_to_25k))
 
 
 #Basic chart
@@ -222,4 +248,23 @@ ggplot(AboveIncome, aes(x = reorder(Geography, Median_Househ_Income), y = Median
 #Question
 #1: Build a chart with top 10 counties with lowest median incomes
 #
+LowIncome <- ArkCensus %>% 
+  select(Geography, Pct_Income_to_25k) %>% 
+  filter(Pct_Income_to_25k >17.5) %>% 
+  arrange(desc(Pct_Income_to_25k))
+
+ggplot(LowIncome, aes(x = reorder(Geography, Pct_Income_to_25k), y = Pct_Income_to_25k, fill=Pct_Income_to_25k)) + 
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  geom_text(aes(label = Pct_Income_to_25k), hjust = -.1, size = 2.2) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  coord_flip() +    #this makes it a horizontal bar chart instead of vertical
+  labs(title = "Communities High Pct of People Earning Less Than $25,000", 
+       subtitle = "2016",
+       caption = "Graphic by Wells",
+       y="Place",
+       x="Pct of Income Less $25k")
+#Plots Window
+#Zoom
+#Export
+
 #--30--

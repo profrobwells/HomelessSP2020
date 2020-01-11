@@ -85,7 +85,7 @@ nrow(MediaBucks)
 # How many columns?
 ncol(MediaBucks)
 
-# Let's look at the first five rows
+# Let's look at the first six rows
 head(MediaBucks)
 
 #Check data types
