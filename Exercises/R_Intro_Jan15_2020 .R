@@ -121,10 +121,14 @@ ArkCensus %>%
 #
 #
 #Question:
-#1: What is the Median Household Income for Washington County, Arkansas
-#2: Median Household Income for Benton County, Arkansas
-#3: Median Household Income for Pulaski County, Arkansas
-#4: Median Household Income for Arkansas
+#3: What is the Median Household Income for Washington County, Arkansas
+
+#--------------------
+#HOMEWORK QUESTIONS#
+#--------------------
+#4: Median Household Income for Benton County, Arkansas
+#5: Median Household Income for Pulaski County, Arkansas
+#6: Median Household Income for Arkansas
 #
 #
 #With the Statewide Median Income, 
@@ -143,8 +147,11 @@ AboveIncome <- ArkCensus %>%
 #group_by Group the data by a categorical variable.
 #
 #Question:
-#1: Create a table of counties with the lowest quartile in income
-#2: Find all Counties with 20% more earning $25,000 or less
+#7: Create a table of counties with the lowest quartile in income
+#--------------------
+#HOMEWORK QUESTIONS#
+#--------------------
+#8: Find all Counties with 20% more earning $25,000 or less
 #
 #Summary of the low income distribution
 summary(ArkCensus$Pct_Income_to_25k)
@@ -156,7 +163,7 @@ ArkCensus %>%
   arrange(desc(Pct_Income_to_25k))
 #
 #Question:
-#1: #Which county has the highest percentage of population in this low income bracket?
+#9: #Which county has the highest percentage of population in this low income bracket?
 
 
 
@@ -220,6 +227,6 @@ ggplot(AboveIncome, aes(x = reorder(Geography, Median_Househ_Income), y = Median
 #Export
 #
 #Question
-#1: Build a chart with top 10 counties with lowest median incomes
+#10: Build a chart with top 10 counties with lowest median incomes
 #
 #--30--
