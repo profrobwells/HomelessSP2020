@@ -1,13 +1,13 @@
 # "Introduction to R - Spring 20202"
 # Rob Wells, PhD
-# 1/9/2020
+# 1/13/2020
 
 # ------- Get Organized --------- #  
 
 ###Set Working Directory. My directory "~/Dropbox/Classes/Data-Analysis-Class-Jour-405v-5003" is an example
+install.packages("here")
+library(here)
 
-getwd()
-setwd("~/Dropbox/Classes/Data-Analysis-Class-Jour-405v-5003")
 
 #  Orientation about R Studio  
 #  There are four main windows:  
