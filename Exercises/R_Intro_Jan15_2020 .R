@@ -1,13 +1,17 @@
 # "Introduction to R - Spring 20202"
 # Rob Wells, PhD
-# 1/9/2020
+# 1/13/2020
 
 # ------- Get Organized --------- #  
+#Create a folder on your Desktop: name it DataSpring2020
+#Store this file and the Census data in this folder
+https://learn.uark.edu/bbcswebdav/courses/MASTER-1203-THEUA-JOUR-405V-SEC007/USArk_Counties_Poverty_ACS_16_5YR_DP03_Jan_24.xlsx
+
 
 ###Set Working Directory. My directory "~/Dropbox/Classes/Data-Analysis-Class-Jour-405v-5003" is an example
-
-getwd()
-setwd("~/Dropbox/Classes/Data-Analysis-Class-Jour-405v-5003")
+install.packages("here")
+library(here)
+#This aligned this file with that directory and saves a huge hassle
 
 #  Orientation about R Studio  
 #  There are four main windows:  
@@ -22,13 +26,10 @@ demo()
 help()
 help.start()
 
-
-### Create a folder for this project on your Desktop  
-
 #Create a script to put all your code -- top left window. 
 #File > New File > R Script  
 
-# Download Census data into that folder
+#Download Census data into that folder
 
 #Install software to grab data
 #tidyverse installs 8 separate software packages to perform
@@ -61,8 +62,13 @@ https://learn.uark.edu/bbcswebdav/courses/MASTER-1203-THEUA-JOUR-405V-SEC007/USA
 # Text, Numeric Data
 
 #Import Data - Cleaned Version!
-ArkCensus <- rio::import("./Data/USArk_Counties_Poverty_ACS_16_5YR_DP03_Jan_24.xlsx", which = "Poverty")
+ArkCensus <- rio::import("USArk_Counties_Poverty_ACS_16_5YR_DP03_Jan_24.xlsx", which = "Poverty")
 #
+#Wells version
+#ArkCensus <- rio::import("./Data/USArk_Counties_Poverty_ACS_16_5YR_DP03_Jan_24.xlsx", which = "Poverty")
+#Alternate
+#ArkCensus2 <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/USArk_Counties_Poverty_ACS_16_5YR_DP03_Jan_24.xlsx?raw=true", which = "Poverty")
+
 #Look at the table
 View(ArkCensus)
 
