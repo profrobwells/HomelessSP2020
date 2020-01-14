@@ -7,11 +7,18 @@
 #Store this file and the Census data in this folder
 https://learn.uark.edu/bbcswebdav/courses/MASTER-1203-THEUA-JOUR-405V-SEC007/USArk_Counties_Poverty_ACS_16_5YR_DP03_Jan_24.xlsx
 
+<<<<<<< HEAD
 
 ###Set Working Directory. My directory "~/Dropbox/Classes/Data-Analysis-Class-Jour-405v-5003" is an example
 install.packages("here")
 library(here)
 #This aligned this file with that directory and saves a huge hassle
+=======
+###Set Working Directory. My directory "~/Dropbox/Classes/Data-Analysis-Class-Jour-405v-5003" is an example
+install.packages("here")
+library(here)
+
+>>>>>>> fcaf9f57841f2a714c5830ca998c0ed1785da9e9
 
 #  Orientation about R Studio  
 #  There are four main windows:  
