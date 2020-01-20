@@ -1,4 +1,4 @@
-# "Introduction to R - Spring 2020"
+# KEY "Introduction to R - Spring 2020"
 # Rob Wells, PhD
 # 1/20/2020
 
@@ -133,8 +133,19 @@ ArkCensus %>%
 #HOMEWORK QUESTIONS#
 #--------------------
 #4: Median Household Income for Benton County, Arkansas
+ArkCensus %>% 
+  select(Geography, Median_Househ_Income) %>% 
+  filter(Geography =="Benton County, Arkansas")
+
 #5: Median Household Income for Pulaski County, Arkansas
+ArkCensus %>% 
+  select(Geography, Median_Househ_Income) %>% 
+  filter(Geography =="Pulaski County, Arkansas")
+
 #6: Median Household Income for Arkansas
+ArkCensus %>% 
+  select(Geography, Median_Househ_Income) %>% 
+  filter(Geography =="Arkansas")
 #
 #
 #With the Statewide Median Income, 
@@ -146,15 +157,6 @@ AboveIncome <- ArkCensus %>%
   filter(Median_Househ_Income > 42336) %>% 
   arrange(desc(Median_Househ_Income))
 #
-#FOR WEDNESDAY JAN 22
-#
-#BASICS OF R.  In the Console window, type:
-demo()
-help()
-help.start()
-
-
-
 #  dplyr 
 #select Choose which columns to include.
 #filter Filter the data.

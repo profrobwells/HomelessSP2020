@@ -92,6 +92,20 @@ Shift + Control (or Command) +P - Reruns previous region code
 
 To quit the R program the command is
 > q()
+# Clean up column names to they are R friendly
+ArkCensus <- janitor::clean_names(ArkCensus)
+View(ArkCensus)
+
+# another method Rename a specific column
+colnames(ArkCensus)[5] <- "BaseEstimate"
+View(ArkCensus)
+
+#rename a specific value in a df
+# Replace the data in a field based on equal to some value
+#SchoolData$Grade[SchoolData$Grade==5] <- "Grade Five"
+x$type3[x$type3==TRUE] <- "News"
+x$type3[x$type3==FALSE] <- "Opinion"
+
 
 
 #Convert to data frame
@@ -106,6 +120,63 @@ colnames(Income)[15] <- "Sum 74+75"
 colnames(Income)[11] <- "VC82"
 
 names(bostonsnow)[2] <- "TotalSnow"
+
+#Delete First Row Headers
+#Reimport the data and skip the first row
+#read.csv(.... , skip=1)
+
+ArkCo_Income_2017 <- rio::import("Data/ArkCo_Income_2017.csv", skip=1)
+View(ArkCo_Income_2017)
+
+#Clean Headers - Janitor package
+#library(janitor)
+
+# Clean up column names to they are R friendly
+ArkCo_Income_2017 <- janitor::clean_names(ArkCo_Income_2017)
+View(ArkCo_Income_2017)
+
+
+# Still need to fix column names
+colnames(ArkCo_Income_2017)
+
+#You can do it one at a time
+#Column 4 households_estimate_total renamed to household_income
+colnames(ArkCo_Income_2017)[4] <- "household_income"
+colnames(ArkCo_Income_2017)
+
+#change it back
+colnames(ArkCo_Income_2017)[4] <- "households_estimate_total"
+colnames(ArkCo_Income_2017)
+
+Delete Columns
+df <- FDI[ -c(6,7,11:13) ]
+#--------------------------------------------------------------------#
+#Converting character strings into numeric
+#--------------------------------------------------------------------#
+
+#What is the character type?
+library(dplyr)
+
+#Tibble or Dplyr for the glimpse function
+dplyr::glimpse(StudentLoans)
+tibble::glimpse(StudentLoans)  
+
+#chr stands for character vectors, or strings.
+#int stands for integers.
+#dbl stands for doubles, or real numbers.
+#dttm stands for date-times (a date + a time).
+
+#Convert numbers to "numeric" data
+#We want to turn all columns after HMC2 into numeric
+#HMC2 is Column #10
+
+#Check you have the right names you want to convert
+colnames(StudentLoans[10:102])
+
+
+StudentLoans[10:102] <- lapply(StudentLoans[10:102], as.numeric)
+glimpse(StudentLoans)  
+#Data changed from <chr> to <dbl>
 
 #Covert Factors to numeric values
 If you need to change the data type for any variable, use the following functions:
@@ -140,6 +211,13 @@ As in a spreadsheet, you can specify a range of values with a colon, for example
 #---------------------------------------------#
 #   Data Processing - Cleaning - NA NAs       #
 #---------------------------------------------#
+#Why the NA result? NA= Missing Value
+
+# list rows of data that have missing values 
+#mydata[!complete.cases(mydata),]
+
+StudentLoans[!complete.cases(StudentLoans)]
+
 
 #Remove rows with NA
 newdata <- ArkCensus[-c(1,3,5), ] 
@@ -194,6 +272,27 @@ AOC4$tag1 <- gsub("[()]", "", AOC4$tag1)
 & means AND, in Boolean logic.
 | means OR, in Boolean logic.
 ! means NOT, in Boolean logic.
+
+Text Cleaning
+https://cran.r-project.org/web/packages/textclean/textclean.pdf
+
+
+`grep` practice
+
+Extract the entries with . Note this is a metacharacter that must be escaped.
+bb <- c("Once", "the", "3rd", "**alarm**", "sounds", "...")
+grep("\\.", bb, value=T)
+
+need to search by wildcards
+exchange2 <- Bigrams_BF_all %>% 
+  filter(word1=="exchange" | word1=="currency" | word2=="currency" | word1==“manipulat?!XXX")
+
+#Filter out some garbage
+junk <- c("http", "mt", "rt")
+
+CommonWellsWords <- CommonWellsWords %>%
+  filter(!word %in% junk)
+
 
 #---------------------------------------------#
 #Selecting data
@@ -256,6 +355,90 @@ df3 <- filter(murders, Relationship_label %in% c("Husband", "Boyfriend")
 #filter to exclude something using != operator
 murders_filtered <- filter(murders, OffAge!=999)
 
+#Manipulating data
+#dplyr - fast data work
+#stringr - work with strings
+
+#Data Management
+#mutate - Create new column(s) in the data, or change existing column(s).
+#mutate() adds new variables and preserves existing;
+# Newly created variables are available immediately
+
+#An example:
+mtcars <- as.data.frame(mtcars)
+View(mtcars)
+
+mtcars2 <- mtcars %>% as_tibble() %>% mutate(
+  cyl2 = cyl * 2,
+  cyl4 = cyl2 * 2
+)
+
+# window functions are useful for grouped mutates
+mtcars %>%
+  group_by(cyl) %>%
+  mutate(rank = min_rank(desc(mpg)))
+
+#Use mutate to add together the percentages of low-wage households
+ArkCo_Income_2017 <- ArkCo_Income_2017 %>%
+  replace(is.na(.), 0) %>%
+  mutate(Low_Wage_Households = rowSums(.[5:7]))
+  
+  
+#---------------------------------------------------#
+#Tables
+#---------------------------------------------------#
+
+#Build a simple summary table
+count <- cos_sum_sentiment %>% 
+  select(pattern, article_nmbr) %>% 
+         group_by(pattern) %>% 
+         count(pattern) %>% 
+         ungroup()
+
+
+#Build Table of Common Wells Words 
+CommonWellsWords <- tweet_words %>%
+  count(word) %>%
+  filter(sum(n) >= 5) %>%
+  ungroup() %>% 
+  arrange(desc(n))
+  
+  Top_People <- select(Coulter2, created_at, text, is_retweet, mentions_screen_name) %>% 
+  mutate(PeopleCount = mentions_screen_name) %>% 
+  count(PeopleCount) %>%
+  drop_na() %>% 
+  top_n(15, n) %>%
+  arrange(desc(n))
+
+#Summary table by year
+WSJ_table_sentiment <- BF_WSJ_sentiment %>% 
+  select(year, score) %>% 
+  group_by(year) %>% 
+  summarise(sentiment = sum(score)) 
+
+# Here's an elegant way to create a Tweets by Month, Year Table
+Coulter_y_Month <- Coulter %>%
+  select(created_at, yearmon, text, screen_name) %>%   
+  group_by(yearmon) %>%
+  count(yearmon)
+
+#rbind
+#Create Name Label
+Trump_bigram_counts1$Name <- "Trump"
+Pelosi_bigram_counts1$Name <- "Pelosi"
+
+#Using RBind, connect the 2 charts
+Trump_Pelosi_Bigrams <- rbind(Trump_bigram_counts1, Pelosi_bigram_counts1)
+
+#Mohamed and the top n function
+#Create separate table with just the top five counties' crime rate: dplyr has a "top_n" function that i find handy
+Top_5_county_rates <- Arkansas_Crime %>%
+  select(County, violent_crime_rate_per10k) %>%
+  top_n(5, violent_crime_rate_per10k) %>%
+  arrange(desc(violent_crime_rate_per10k))
+
+#Mohamed and rio for export
+rio::export(Top_5_county_rates, "Top_5_violent_crimes.csv")
 
 #---------------------------------------------#
 #   Math                   
@@ -296,6 +479,11 @@ summary()
 TotalViolent2017 <- sum(Census$Violent_Crime)
 AvgViolent2017 <- mean(Census$Violent_Crime)
 MedianViolent2017 <- median(Census$Violent_Crime)
+
+#Doing math on columns with missing values
+
+sum(StudentLoans$UGDS_WHITE, na.rm=TRUE)
+mean(StudentLoans$TUITIONFEE_IN, na.rm=TRUE)
 
 #Standard Deviation
 sd(Census$Per10000, na.rm=TRUE)
@@ -356,6 +544,25 @@ quantile(Immigrants$ForeignPer, c(0.1, 0.2, 0.3, 0.4,0.5, 0.6, 0.7, 0.8, 0.9), n
 90% 
 0.41473971   
 
+#5: Create a new crime rate column with violent crime per 10,000 residents   
+
+ArkCrime2017$CrimePer10000 <- (ArkCrime2017$violent_crime / ArkCrime2017$population) *10000 
+View(ArkCrime2017)
+
+#6: Sort the table descending with the highest crime rate on top   
+
+# Sort by largest percentage change
+ArkCrime2017 <- ArkCrime2017[order(-ArkCrime2017$CrimePer10000),]
+
+OR
+ArkCrime2017a <- ArkCrime2017%>%select(city, CrimePer10000)%>%arrange(desc(CrimePer10000))
+
+
+#7: Create separate table with just the top five counties' crime rate
+Top5 <- ArkCrime2017 %>% select(city, CrimePer10000) %>% filter(CrimePer10000 >= 163)
+View(Top5)  
+
+
 #-------------------------------------------------------------------#
 #    Charts - GGPLOT
 #-------------------------------------------------------------------#  
@@ -405,6 +612,205 @@ deaths_by_year_chart <- ggplot(deaths_by_year, aes(x = deathyr, y = numdeaths)) 
 #here's where we tell it to plot the chart in the window below
 #note you can right-mouse click on the chart and save it to your desktop
 plot(deaths_by_year_chart)
+
+#-------------------------------------------------------------------#
+#Build a chart - Snow
+#-------------------------------------------------------------------#
+
+library(ggplot2)
+SnowChartBoston <- ggplot(bostonsnow, aes(x = reorder(Winter, TotalSnow), y = TotalSnow))  +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Snow", 
+       subtitle = "lots of it",
+       caption = "Graphic by Rob Wells",
+       x="Years",
+       y="snow in inches")
+plot(SnowChartBoston)
+
+#Notes from R for Data Scientists - Wickham
+#https://r4ds.had.co.nz/
+
+#Feb. 2 2019
+install.packages('tidyverse')
+install.packages(c("nycflights13", "gapminder", "Lahman"))
+
+#If we want to make it clear what package an object comes from, we’ll use the package name followed by two colons, like dplyr::mutate(), or
+#nycflights13::flights. This is also valid R code.
+
+library(tidyverse)
+
+
+#Do cars with big engines use more fuel than cars with small engines? 
+#displ, a car’s engine size, in litres.
+#hwy, a car’s fuel efficiency on the highway, in miles per gallon (mpg). 
+#A car with a low fuel efficiency consumes more fuel than a car with a high fuel efficiency when they travel the same distance.
+#To learn more about mpg, open its help page by running ?mpg.
+
+mpg
+
+#Create a ggplot
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+#3.2.3 A graphing template
+#Let’s turn this code into a reusable template for making graphs with ggplot2. 
+#To make a graph, replace the bracketed sections in the code below with a dataset, a geom function, or a collection of mappings.
+#ggplot(data = <DATA>) + 
+#  <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))
+
+ggplot(data = mpg)
+
+#using color to distinguish class
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+
+#MPG categorical = manufacturer model cyl trans drv fl class
+#continuous = disply cty hwy
+#Map a continuous variable to color, size, and shape. 
+#How do these aesthetics behave differently for categorical vs. continuous variables?
+#Answer - they do not come up in discrete blocks by on a spectrum range
+
+#Color by manufacturer
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color =manufacturer))
+
+#Color and Size
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color =manufacturer, size=manufacturer))
+
+
+#adding size
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = class, color = class))
+
+#What does the stroke aesthetic do? What shapes does it work with? (Hint: use ?geom_point)
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = class, stroke=20))
+
+#What happens if you map an aesthetic to something other than a variable name, 
+#like aes(colour = displ < 5)? Note, you’ll also need to specify x and y.
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = displ < 5))
+
+#It gives you a true false by color
+
+#Graph with percentages on the axis, adjusted scale, bars with figures
+
+Z_AR_PCT %>% 
+  filter(Pct_Chg > .13) %>% 
+  ggplot(aes(x = reorder(region_name, Pct_Chg), y = Pct_Chg, fill = Pct_Chg)) +
+  geom_col(position = "dodge", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_text(aes(label = Pct_Chg), hjust = -.5, size = 2) +
+  scale_y_continuous(limits=c(0, .45),labels = scales::percent) +
+  coord_flip() +
+  labs(title = "Arkansas Real Estate Values, 2010-2019",
+       subtitle = "Zillow housing index",
+       caption = "Graphic by Rob Wells, 12-22-19",
+       y="Index, Pct Change",
+       x="City")
+
+#July 2: Formatting ggplot
+http://www.sthda.com/english/wiki/ggplot2-axis-ticks-a-guide-to-customize-tick-marks-and-labels
+
+#News only line
+EF_type_sent %>%
+  filter(type=="News") %>% 
+  filter(year!=2019) %>%
+  group_by(year, type) %>% 
+  summarize(mean = mean(score))  %>% 
+  ggplot(aes(x = year, y = mean)) +
+  geom_smooth(se=FALSE)+
+  scale_x_continuous(breaks=c(2000:2018)) +
+  theme(axis.text.x = element_text(angle=90)) +
+  #scale_x_date() +
+  #scale_y_reverse() +
+  #coord_flip()  +
+  labs(title = "Sentiment News Articles- China Economic News", 
+       subtitle = "Sentiment Score: NYT, WSJ, LAT, WP, IUT: Economic Filter, 2000-2018.",
+       caption = "Bing sentiment dictionary. Source: ProQuest. Graphic by Rob Wells",
+       x="Year",
+       y="Sentiment score")
+
+
+# Mean score per year
+EF_type_sent %>% 
+  filter(year!=2019) %>%
+  filter(type=="Opinion") %>% 
+  group_by(year, Pub) %>% 
+  summarize(mean = mean(score))  %>% 
+  ggplot(aes(x= year, y= mean, fill= Pub)) +
+  geom_bar(stat="identity", width=.5, position = "dodge") +
+  scale_y_reverse() +
+  coord_flip()  +
+  labs(title = "Sentiment Of Opinion Articles: China Economic News", 
+       subtitle = "Sentiment Score: NYT, WSJ, LAT, WP, IUT: Economic Filter, 2000-2018.",
+       caption = "Bing sentiment dictionary. Source: ProQuest. Graphic by Rob Wells",
+       x="Year",
+       y="Average Sentiment Score / Year")  
+
+#9: Visualize findings, create a simple chart using ggplot that shows the top 5 counties' crime rate.   
+# If you haven't installed the ggplot2 package yet, uncomment and run the line below
+# install.packages("ggplot2")
+library(ggplot2)
+library(forcats)
+
+
+#SAMPLE CODE: Loanchart<- ggplot(NationalLoans, 
+#               aes(x=TotalDisbursements_Mil., y=fct_reorder(State, TotalDisbursements_Mil., desc=TRUE))) +
+
+#Build a basic percentage change chart  
+Top5Chart <- ggplot(Top5, aes(x = CrimePer10000, y=fct_reorder(city, CrimePer10000, desc=TRUE))) +
+  geom_col () +
+  scale_x_continuous(labels = scales::percent) +
+  labs(title = "Arkansas Cities With Top Crime Rates Per 10,000, 2017", 
+       subtitle = "FBI Uniform Crime Report Data: https://ucr.fbi.gov/crime-in-the-u.s/2017/crime-in-the-u.s.-2017/tables/table-8/table-8-state-cuts/arkansas.xls",
+       caption = "Graphic by Rob Wells",
+       x="Crime Rate Per 10,000 People",
+       y="City")
+
+plot(Top5Chart)
+
+
+library(ggplot2)
+Top5Chart <- ggplot(Top5, aes(x = reorder(city, -CrimePer10000), y = CrimePer10000))  +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Arkansas Cities With Top Crime Rates Per 10,000", 
+       subtitle = "FBI Uniform Crime Report Data, 2017",
+       caption = "Graphic by Rob Wells",
+       x="City",
+       y="Crime Rate Per 10,000 People")
+plot(Top5Chart)
+
+#10: Upload the R script, .csv files and .jpg file to Blackboard.
+
+
+
+
+#-----------------------------------#
+# Extra touches from your colleagues
+#-----------------------------------#
+
+#Do the Katie Serrano special and add some killer colors
+ColorTop5Chart <- ggplot(Top5, aes(x = reorder(city, -CrimePer10000), y = CrimePer10000, color = city, fill=city))  +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Arkansas Cities With Top Crime Rates Per 10,000", 
+       subtitle = "FBI Uniform Crime Report Data, 2017",
+       caption = "Graphic by Rob Wells",
+       x="City",
+       y="Crime Rate Per 10,000 People")
+plot(ColorTop5Chart)
+
+
+#Alex Nichol decimal rounding:
+CrimeData$ViolentCrimePer10000<-round(CrimeData$ViolentCrimePer10000, 2)
+
+
+
 
 #---------------------------------------------#
 #   Images - Embedding - Formatting                  
@@ -557,3 +963,42 @@ Base R Cheat Sheet
 https://www.povertyactionlab.org/sites/default/files/r-cheat-sheet.pdf
 
 
+#---------------------------------------------------------
+Resources on R coding
+
+Formatting ggplot
+http://www.sthda.com/english/wiki/ggplot2-axis-ticks-a-guide-to-customize-tick-marks-and-labels
+
+https://tutorials.quanteda.io/basic-operations/
+  
+  https://www.oreilly.com/library/view/practical-text-mining/9780123869791/xhtml/CHP008.html
+
+For later
+https://www3.nd.edu/~steve/computing_with_data/19_strings_and_text/strings_and_text.html#/23
+
+More text mining
+https://www.hackerearth.com/practice/machine-learning/advanced-techniques/text-mining-feature-engineering-r/tutorial/
+  
+  For later
+https://programminghistorian.org/en/lessons/basic-text-processing-in-r
+
+https://stackoverflow.com/questions/49173770/find-occurrences-of-huge-list-of-phrases-in-text
+
+
+http://www.endmemo.com/program/R/grepl.php
+
+Regular expressions
+https://www.hackerearth.com/practice/machine-learning/advanced-techniques/regular-expressions-string-manipulation-r/tutorial/
+  
+  —reviewed R for Data Science
+https://r4ds.had.co.nz/transform.html
+to ch 5
+
+—Sentiment analysis book
+https://towardsdatascience.com/sentiment-analysis-in-r-good-vs-not-good-handling-negations-2404ec9ff2ae
+
+—Intro to tidy text mining
+https://medium.com/inside-socialcops/an-introduction-to-tidy-text-mining-49133697f61f
+
+Tidy Data techniques
+https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html
