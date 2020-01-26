@@ -183,6 +183,8 @@ ArkCensus %>%
 
 
 #Basic chart
+#Build a basic chart in ggplot using our data
+
 ggplot(AboveIncome, aes(x = Geography, y = Median_Househ_Income)) + 
   geom_bar(stat = "identity") +
   coord_flip() +    #this makes it a horizontal bar chart instead of vertical
@@ -245,3 +247,5 @@ ggplot(AboveIncome, aes(x = reorder(Geography, Median_Househ_Income), y = Median
 #10: Build a chart with top 10 counties with lowest median incomes
 #
 #--30--
+#
+
