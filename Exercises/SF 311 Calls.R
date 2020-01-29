@@ -1,95 +1,53 @@
-#San Francisco 311 Call for Service Data
+#Rob Wells, PhD. Jan 29, 2020
+#San Francisco 311 Call for Service Data, Exercise #1
 
-
+#Load software
 library(tidyverse)
 library(janitor)
 
-#WARNING: This line below loads 3 million records and will take about 3 minutes to run
-SF1 <- rio::import("https://data.sfgov.org/api/views/hz9m-tj6z/rows.csv?accessType=DOWNLOAD")
-SF2 <- janitor::clean_names(SF1)
+#Import data
+SF <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/SF_311_Jan29.xlsx?raw=true", which = "SF Police_Department_Calls_for_")
 
+#Clean names
+SF <- janitor::clean_names(SF)
+#
+#Question #1: How many rows? Columns? Provide the code and answers below. Supply a list of the column names
+#
+
+#Skim this background on the lubridate package. Many packages have vignettes in R to explain what they do
+vignette("lubridate")
+#
+install.packages("lubridate")
 library(lubridate)
-SF2$call_date2 <- mdy(SF2$call_date)
-SF2$year <- year(SF2$call_date2)
 
-Days <- SF2 %>% 
-  count(call_date) %>% 
-  group_by(call_date) %>% 
-  arrange(desc(n))
-  
-Years <- SF2 %>% 
-  count(year) %>% 
-  group_by(year) %>% 
-  arrange(desc(n))
+#Process dates
+SF$call_date2 <- ymd(SF$call_date)
+SF$year <- year(SF$call_date2)
+#
+str(SF)
+#Examine how we have created a new date and year column and how they are formatted differently than the rest
+#We can now perform date and year calculations
 
-# A tibble: 4 x 2
-# # Groups:   year [4]
-# year      n
-# <dbl>  <int>
-#   1  2017 841947
-# 2  2018 803985
-# 3  2019 771401
-# 4  2016 631464
-
-SF2019 <- SF2 %>% 
-  filter(year==2019)
-
-write.csv(SF2019,"SF2019.csv")
-
-
-SF2019_NOV30 <- SF2 %>% 
-  filter(call_date2=="2019-11-30")
-
-write.csv(SF2019_NOV30,"SF2019_NOV30.csv")
-
-  
-  #Total Tweets by Day
-  AOCDaytotal <- AOCdates2 %>% 
-  count(date) %>% 
-  group_by(date) %>% 
+Days <- SF %>% 
+  count(call_date2) %>% 
+  group_by(call_date2) %>% 
   arrange(desc(n))
 
-#Calculate single busiest day
-AOCdailytweets <- AOCdates2 %>% 
-  count(date2) %>% 
-  group_by(date2) %>% 
-  arrange(desc(n))
+#Question #2: Using the summary() function, describe the minimum, maximum, median and mean of calls in the Days table
+#paste the code and answer here. Write two sentences here that put these trends in context
+#
+#Question #3: Which day had the most calls? Which day had the least? Provide this answer with code using the filter statement
+#
+#Examine the types of events
 
+Types <- SF %>% count(original_crime_type_name) %>% 
+  group_by(original_crime_type_name) %>% 
+    arrange(desc(n))
 
-#Total Tweets by Month
-AOCmonth <- AOCdates2 %>% 
-  count(month) %>% 
-  group_by(month) %>% 
-  arrange(desc(n))
-
-
-
-
-#This worked - returned a huge list
-#install.packages("OData")
-library(OData)
-SF <- retrieveData("https://data.sfgov.org/resource/hz9m-tj6z.json") 
-
-SF <- downloadResourceCsv("https://data.sfgov.org/resource/hz9m-tj6z.json") 
-
-SF1 <- downloadResourceCsv("https://data.sfgov.org/api/odata/v4/hz9m-tj6z", ",")
+#Question #4: What are the top five complaints in this data and provide the number of complaints. 
+#Create a filter statement to produce a table with just the top five results from the Types table.
+#Put your code and paste the table below.
 
 
 
-#df <- data.frame(matrix(unlist(l), nrow=14, byrow=T),stringsAsFactors=FALSE)
 
-SF1 <- data.frame(matrix(unlist(SF), nrow=1000, byrow=F),stringsAsFactors=FALSE)
-SF1 <- as.data.frame(SF)
-
-
-SF <- rio::import("./Data/Fayettevillle Police 2020.xlsx", which = "Jan 2020", skip=11)
-
-Cops <- janitor::clean_names(Cops)
-colnames(Cops)
-
-Busted <- Cops %>% 
-  select(date_time_of_call, description) %>% 
-  group_by(description) %>% 
-  count(description) %>% 
-  arrange(desc(n)) %>% 
-  ungroup()
