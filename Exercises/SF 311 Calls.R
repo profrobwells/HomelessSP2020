@@ -94,7 +94,7 @@ Nopeople <- SF %>%
   filter(disposition == "ND" | disposition == "GOA")
 
 #QUESTION #7: Create a table with the serious actions including citations and arrests police took in the dispositions
-
+#WRITE YOUR CODE HERE
 
 #------------------------------
 #EXERCISE - A Basic chart of the crime data
@@ -134,7 +134,126 @@ SF %>%
        x="Places")
 
 #QUESTION #8: Chart the total dispositions. Filter for at least 100 actions. Add color, export image to Blackboard.
+#Write your code here
 
+#------------------------------
+#Part 3, SF 311 Call Data
+#
+#Making our charts less ugly
+#
+#The disposition column is in cop-speak. We need to clean it up
+#
+#Step #1: Duplicate the column you want to mess with
+SF$disposition1 <- SF$disposition
+#
+#Rename specific strings. Example:
+#str_replace_all(test.vector, pattern=fixed('-'), replacement=fixed(':') )
+#https://dereksonderegger.github.io/570L/13-string-manipulation.html
+#We can do this to replace ABA with "Abated"
+SF$disposition1 <- str_replace_all(SF$disposition1, pattern=fixed('ABA'), replacement=fixed('Abated') )
+#Again with ADM
+SF$disposition1 <- str_replace_all(SF$disposition1, pattern=fixed('ADM'), replacement=fixed('Admonished') )
+#
+#We can do that 19 times. OR....
+#Look at this example using a lookup table to replace all the values
+#https://stackoverflow.com/questions/50615116/renaming-character-variables-in-a-column-in-data-frame-r
+#
+#Build a table to translate the Cop Speak to English:
+dispo_lkup <- c(ABA="Abated", ADM="Admonish", ADV="Advised", ARR="Arrest", CAN="Cancel", CSA="CPSA", 
+                CIT="Cited", CRM="Criminal", GOA="Gone", HAN="Handled", NCR="No_Criminal", ND="No_Dispo", 
+                NOM="No_Merit", PAS="PlaceSecure", REP="Report", SFD="Medical", UTL="Unfound", VAS="Vehicle_Secure", '22'="Cancel")
+
+#22="Cancel" was handled differently because it is a numeric value: '22'="Cancel"
+#
+#This scans "disposition", finds ABA and replaces with Abated, finds ARR, replaces with Arrest, etc
+SF$disposition1 <- as.character(dispo_lkup[SF$disposition])
+
+#
+#Rerun Action with disposition1
+Action <- SF %>% 
+  count(disposition1) %>% 
+  arrange(desc(n))
+#
+View(Action)
+#What is wrong with this picture?
+#
+#Compare our renamed variables to the original disposition
+Action <- SF %>% 
+  count(disposition1, disposition) %>% 
+  arrange(desc(n))
+#
+#We have codes not listed on the sheet
+NA	Not recorded	4339
+#
+#Get rid of the space
+SF$disposition <- gsub("Not recorded", "Not_Recorded", SF$disposition)
+#
+#Add to the list
+dispo_lkup <- c(ABA="Abated", ADM="Admonish", ADV="Advised", ARR="Arrest", CAN="Cancel", CSA="CPSA", 
+                CIT="Cited", CRM="Criminal", GOA="Gone", HAN="Handled", NCR="No_Criminal", ND="No_Dispo", 
+                NOM="No_Merit", PAS="PlaceSecure", REP="Report", SFD="Medical", UTL="Unfound", 
+                VAS="Vehicle_Secure", '22'="Cancel", Not_Recorded="NotRecorded")
+#Rerun
+SF$disposition1 <- as.character(dispo_lkup[SF$disposition])
+#
+Action <- SF %>% 
+  count(disposition1) %>% 
+  arrange(desc(n))
+#
+View(Action)
+#
+#Chart Time
+#
+Action %>% 
+  filter(n > 100) %>% 
+  ggplot(aes(x = reorder(disposition1, n), y = n, fill=n)) + 
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +    #this makes it a horizontal bar chart instead of vertical
+  labs(title = "Action on Homeless Calls, San Francisco", 
+       subtitle = "311 Call Data, 3/2016-11/2019",
+       caption = "Graphic by Wells",
+       y="Number of Calls",
+       x="Action")
+#
+#Parse out police codes from narrative: original_crime_type_name
+#Look at the Types table: some columns have one code, some have two.
+#919	2879
+#915 Sleeper	290
+#
+#Some are separated by a slash
+#915/919	161
+#
+#We need to unpack that
+#convert all text to lowercase
+SF$crime1 <- tolower(SF$original_crime_type_name)
+#Replace / with a space
+SF$crime1 <- gsub("/", " ", SF$crime1)
+#Replace '
+SF$crime1 <- gsub("'", "", SF$crime1)
+#fix space in homeless complaint
+SF$crime1 <- gsub("homeless complaint", "homeless_complaint", SF$crime1)
+#split data into two columns
+SF <- separate(data = SF, col = crime1, into = c("crime2", "crime3"), sep = " ", extra = "merge", fill = "right")
+
+#Look at the categories now
+Types2 <- SF %>% count(crime2) %>% 
+  group_by(crime2) %>% 
+  arrange(desc(n))
+#
+#Question #9
+#Take the top 10 crime categories from Type2
+#Relabel them from the numeric radio codes into English
+#Using the technique earlier in "Build a table to translate the Cop Speak to English"
+#Relabel the offenses
+#Create a new Types table with the results
+#
+clean <- c('915x'="homeless_call", '601'="trespasser", etc...
+#
+SF$crime2 <- as.character(clean[SF$crime2])
+
+#
+#Question #10
+#Make a chart from your cleaned data
 
 
 
