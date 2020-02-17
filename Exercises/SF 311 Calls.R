@@ -255,5 +255,74 @@ SF$crime2 <- as.character(clean[SF$crime2])
 #Question #10
 #Make a chart from your cleaned data
 
+#-----------------------
+#311 Call Data, Part 4
+#-----------------------
+#Using Mutate, Percentage Calculations, Further Data Cleaning
 
+#In Class Task 1: Clean crime3, combine with crime2
+
+#Previously, we split data into two columns
+SF <- separate(data = SF, col = crime1, into = c("crime2", "crime3"), sep = " ", extra = "merge", fill = "right")
+
+#Look at crime3 again
+
+Types5 <- SF %>% count(crime3) %>% 
+  group_by(crime3) %>% 
+  arrange(desc(n))
+
+#Remove space
+Types5$crime3 <- gsub(" ", "", Types5$crime3)
+
+clean <- c(homeless_complaint="homeless_complaint", '915'="homeless_call", '919'="sit_lying", '920'="aggress_solicit",
+           '915s'="homeless_call", '915x'="homeless_call", drugs="drugs", '601'="trespasser",
+           poss="poss", aggressive="aggressive", '811'="intoxicated", '909'="citizen_interview", encampment="camp", campers="camp", camper="camp")
+#
+Types5$crime3 <- as.character(clean[Types5$crime3])
+
+Types5$crime3 <- gsub(" ", "", Types5$crime3)
+
+#mutate - Create new column(s) in the data, or change existing column(s).
+#mutate() adds new variables and preserves existing;
+# Newly created variables are available immediately
+
+#An example:
+mtcars <- as.data.frame(mtcars)
+View(mtcars)
+
+mtcars2 <- mtcars %>% as_tibble() %>% mutate(
+  cyl2 = cyl * 2,
+  cyl4 = cyl2 * 2
+)
+
+#Chart the number of calls by year and month
+#Process dates using lubidate
+library(lubridate)
+SF$yearmo <- yearmo(SF$call_date)
+
+SF <- SF %>% 
+  mutate(yearmo = format(call_date, "%Y-%m"))
+
+SF %>% 
+  count(yearmo) %>% 
+  group_by(yearmo) %>% 
+  ggplot(aes(x = yearmo, y = n, fill=n)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle=90)) +
+  #Changes angle of x axis labels
+  #coord_flip() +    #this makes it a horizontal bar chart instead of vertical
+  labs(title = "Homeless Calls After 2017, San Francisco", 
+       subtitle = "311 Call Data by Month 2017-2019",
+       caption = "Graphic by Wells",
+       y="Number of Calls",
+       x="Year")
+
+#Percentage change per month
+df <- SF %>% 
+  select(original_crime_type_name, disposition, address, call_date2, yearmo) %>% 
+  count(yearmo) %>% 
+  mutate(difference = (n-lag(n))) %>% 
+  mutate(pct_change = (difference/abs(lag(n)))*100)
+
+#Chart it.
 
