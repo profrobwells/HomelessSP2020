@@ -650,10 +650,31 @@ Total_Calls_Master %>%
 #
 #Build a professional chart using the formatting tricks (labels, etc)
 #
+#----------------------------------------------
+
 #Task #2: Tabulate complaints by day of the week
-https://github.com/profrobwells/Data-Analysis-Class-Jour-405v-5003/blob/master/Readings/dealing-with-dates.pdf
+#https://github.com/profrobwells/Data-Analysis-Class-Jour-405v-5003/blob/master/Readings/dealing-with-dates.pdf
 #
-data$weekday <- wday(data$DOB, label=TRUE, abbr=FALSE)
+#Key code from tutorial:
+#data$weekday <- wday(data$DOB, label=TRUE, abbr=FALSE)
 
 SF <- SF %>% 
   mutate(weekday = wday(call_date, label=TRUE, abbr=FALSE))
+
+#Build a summary table with the days of the week with the greatest
+#number of calls
+
+#Create a graphic
+
+#Then build a table to see if the complaints vary by day
+
+#----------------------------------------------
+#Task #3: Calls vs Dispositions
+#
+#What calls resulted in arrests? What calls resulted in citations?
+
+Action2 <- SF %>%
+  select(crime_id, original_crime_type_name, disposition) 
+
+#We need to pair the crime type and disposition and then count them
+
