@@ -600,13 +600,17 @@ write_csv(Calls_Table_Sum, "Calls_Table_Sum.csv")
 ??grep
 #http://www.endmemo.com/program/R/grepl.php
 
+#convert all text to lowercase
+SF$crime1 <- tolower(SF$original_crime_type_name)
+#
+
 x915 <- SF %>% 
   filter(grepl ("915", original_crime_type_name)) %>% 
-  mutate(cleaned = "915")
+  mutate(cleaned = "homeless_complaint")
 
 x919 <- SF %>% 
   filter(grepl ("919", original_crime_type_name)) %>% 
-  mutate(cleaned = "919")
+  mutate(cleaned = "sitting_lying")
 
 xsleep <- SF %>% 
   filter(grepl ("sleep", original_crime_type_name)) %>% 
@@ -624,7 +628,49 @@ xhomeless <- SF %>%
   filter(grepl ("homeless_complaint", crime2)) %>% 
   mutate(cleaned = "homeless_complaint")
 
-new_total <- rbind(xhomeless, x915, x919, xaggr, xdrug, xsleep)
+#Moe, Brooke's Work: 
+xnoise <- SF %>% 
+  filter(grepl ("415", original_crime_type_name)) %>% 
+  mutate(cleaned = "noise")
+
+xposs <- SF %>% 
+  filter(grepl ("poss", original_crime_type_name)) %>% 
+  mutate(cleaned = "possession")
+
+xtrespasser <- SF %>% 
+  filter(grepl ("601", original_crime_type_name)) %>% 
+  mutate(cleaned = "trespasser")
+
+xsolicit <- SF %>% 
+  filter(grepl ("920", original_crime_type_name)) %>% 
+  mutate(cleaned = "solicit")
+
+xinterview <- SF %>% 
+  filter(grepl ("909", original_crime_type_name)) %>% 
+  mutate(cleaned = "interview")
+
+xtent <- SF %>%
+  filter(grepl ("tent", crime1)) %>%
+  mutate(cleaned="tent")
+
+xdog <- SF %>%
+  filter(grepl ("dog", crime1)) %>%
+  mutate(cleaned="dog")
+
+xchopshop <- SF %>%
+  filter(grepl ("chop shop", crime1)) %>%
+  mutate(cleaned="chopshop")
+
+xpanhandling <- SF %>%
+  filter(grepl ("panhandling", crime1)) %>%
+  mutate(cleaned="panhandling")
+
+xmusic <- SF %>%
+  filter(grepl ("music", crime1)) %>%
+  mutate(cleaned="music")
+
+new_total <- rbind(xhomeless, x915, x919, xaggr, xdrug, xsleep, xnoise, xposs, xtrespasser, xsolicit, xinterview, xtent, xdog,
+                   xchopshop, xpanhandling, xmusic)
 
 Total_Calls_Master <- new_total %>% 
   count(cleaned) %>% 
@@ -668,6 +714,55 @@ SF <- SF %>%
 
 #Then build a table to see if the complaints vary by day
 
+#Matthew Moore, Katy Seiter, Wells edited
+
+xyz <- SF %>% 
+  mutate(weekday = wday(call_date, label=TRUE, abbr=FALSE))
+
+Weekday1 <- xyz %>% 
+  select(weekday,crime_id) %>% 
+  group_by(weekday) 
+
+Weekday_Count1 <- Weekday1 %>%
+  select(weekday, crime_id) %>%
+  count(weekday) %>%
+  arrange(desc(n))
+
+#Create a graphic - bar chart
+Weekday_Count %>% 
+  ggplot(aes(x = weekday, y = n, fill=n)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=90)) +
+  #Changes angle of x axis labels
+  #coord_flip() +    #this makes it a horizontal bar chart instead of vertical
+  labs(title = "Homeless Calls By Weekday in San Francisco", 
+       subtitle = "311 Call Data 2017-2019",
+       caption = "Graphic by Moore and Seiter",
+       y="Number of Calls",
+       x="Weekday")
+
+#Create a Bubble graphic
+ggplot(data = Weekday_Count) + 
+  geom_point(mapping = aes(x = weekday, y = n, size = n, color = n), show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(title = "Homeless By Weekday in San Francisco", 
+       subtitle = "311 Call Data 2017-2019: Source: SFPD",
+       caption = "Graphic by Moore and Seiter",
+       y="Number of Calls",
+       x="Weekday")
+
+# make bubble chart
+ggplot(Weekday_Count, aes(x = weekday, y = n)) +
+  xlab("Weekday") +
+  ylab("Number of Calls") +
+  theme_minimal(base_size = 12, base_family = "Georgia") +
+  geom_point(aes(size = n, color = n), alpha = 0.7, show.legend = FALSE) +
+  scale_size_area(guide = FALSE, max_size = 15) +
+  labs(title = "Homeless By Weekday in San Francisco", 
+       subtitle = "311 Call Data 2017-2019: Source: SFPD",
+       caption = "Graphic by Moore and Seiter")
+
+  
 #----------------------------------------------
 #Task #3: Calls vs Dispositions
 #
@@ -678,3 +773,59 @@ Action2 <- SF %>%
 
 #We need to pair the crime type and disposition and then count them
 
+#Michael Adkison:
+callsarrest <- Action2 %>% 
+  filter(grepl("ARR", disposition)) %>% 
+  mutate(cleaned = "Arrest")
+
+#To quickly format into percents, load
+#install.packages("formattable")
+library(formattable)
+#Sample: ArkCensus$Pct2017 <- percent(ArkCensus$Pct2017)
+
+#total arrests = 441
+callsarrest2 <- callsarrest %>% 
+  arrange(original_crime_type_name, disposition) %>% 
+  count(original_crime_type_name) %>% 
+#  mutate(PctTotal = (n/441)) %>% 
+  arrange(desc(n))
+
+colnames(callsarrest2)[1:2] <- c("Complaints", "Arrests") 
+
+#Build a table to translate the Cop Speak to English:
+clean <- c('Homeless Complaint'="Homeless_complaint", homeless_complaint="Homeless_complaint", '915'="Homeless_complaint", 
+           '919'="Sit_lying", '920'="Aggress_solicit", '915s'="Homeless_complaint", '915x'="Homeless_complaint", 
+           drugs="drugs", '601'="trespasser", poss="poss", aggressive="aggressive", '811'="intoxicated", 
+           'Drugs / 915'="Drugs", 'Drugs/915'="Drugs")
+
+#
+#This scans "disposition", finds ABA and replaces with Abated, finds ARR, replaces with Arrest, etc
+callsarrest2$Complaints <- as.character(clean[callsarrest2$Complaints])
+
+callsarrest3 <- callsarrest2 %>% 
+  select(Complaints, Arrests) %>% 
+  group_by(Complaints) %>% 
+  summarise(total = sum(Arrests)) %>% 
+  mutate(PctTotal = (total/441)) %>% 
+  arrange(desc(total))
+
+colnames(callsarrest3)[2] <- "Arrests" 
+callsarrest3$PctTotal <- formattable::percent(callsarrest3$PctTotal)
+
+
+# This makes kables
+library(kableExtra)
+
+callsarrest3 %>% 
+  kableExtra::kable() %>%
+  kable_styling("striped")
+
+#-----------------------------------------------------------------------------------------------
+# Part 5: Trends over time
+#-----------------------------------------------------------------------------------------------
+
+# - **Question**: What were the common days for arrests?
+# - **Question**: What is the trend for arrests over the time period?
+# - **Question**: What are the hours most likely for complaints?
+# - **Question**: Examine some of the charting options on this tutorial and adapt them to this data using any chart you want
+# https://paldhous.github.io/wcsj/2017/
