@@ -1527,7 +1527,29 @@ div.tocify {
 <hr />
 <div id="part-1-quick-start" class="section level1">
 <h1>Part 1: Quick Start</h1>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ───────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.2.1     ✓ purrr   0.3.3
+## ✓ tibble  2.1.3     ✓ dplyr   0.8.3
+## ✓ tidyr   1.0.0     ✓ stringr 1.4.0
+## ✓ readr   1.3.1     ✓ forcats 0.4.0</code></pre>
+<pre><code>## ── Conflicts ──────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(janitor)</code></pre>
+<pre><code>## 
+## Attaching package: 'janitor'</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     chisq.test, fisher.test</code></pre>
+<pre class="r"><code>library(lubridate)</code></pre>
+<pre><code>## 
+## Attaching package: 'lubridate'</code></pre>
+<pre><code>## The following object is masked from 'package:base':
+## 
+##     date</code></pre>
 <p>Reload Data</p>
+<pre class="r"><code>SF &lt;- rio::import(&quot;https://github.com/profrobwells/HomelessSP2020/blob/master/Data/SF_311_Jan29.xlsx?raw=true&quot;, which = &quot;SF Police_Department_Calls_for_&quot;) </code></pre>
 <ul>
 <li><strong>Clean names, Process dates</strong></li>
 </ul>
