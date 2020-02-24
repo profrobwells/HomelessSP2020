@@ -8,12 +8,22 @@ output:
       toc_float: true
       toc_depth: 4
 ---
-#Reporting on Homelessness: Data Analysis for Journalists   
-##Jour 405v, Jour 5003, Spring 2020    
+ 
+### Reporting on Homelessness: Data Analysis for Journalists   
+
+### Jour 405v, Jour 5003, Spring 2020    
+
+
+
 ![](Images/UARK logo NEW.png)
 
-#Analysis of San Francisco 311 Call Data
 
+
+# Analysis of San Francisco 311 Call Data  
+   
+   
+
+   
 --------------------------------------------------------------------
 # Part 1: Quick Start
 
