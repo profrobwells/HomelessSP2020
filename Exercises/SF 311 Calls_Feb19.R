@@ -716,14 +716,10 @@ SF <- SF %>%
 
 #Matthew Moore, Katy Seiter, Wells edited
 
-xyz <- SF %>% 
+SF <- SF %>% 
   mutate(weekday = wday(call_date, label=TRUE, abbr=FALSE))
 
-Weekday1 <- xyz %>% 
-  select(weekday,crime_id) %>% 
-  group_by(weekday) 
-
-Weekday_Count1 <- Weekday1 %>%
+Weekday_Count <- SF %>%
   select(weekday, crime_id) %>%
   count(weekday) %>%
   arrange(desc(n))
@@ -829,3 +825,63 @@ callsarrest3 %>%
 # - **Question**: What are the hours most likely for complaints?
 # - **Question**: Examine some of the charting options on this tutorial and adapt them to this data using any chart you want
 # https://paldhous.github.io/wcsj/2017/
+
+# WELLS ANSWER - **Question**: What were the common days for arrests?
+SF %>%
+  select(weekday, crime_id, disposition) %>%
+  filter(grepl("ARR", disposition)) %>%
+  count(weekday) 
+
+# make bubble chart
+SF %>%
+  select(weekday, crime_id, disposition) %>%
+  filter(grepl("ARR", disposition)) %>%
+  count(weekday) %>% 
+  ggplot(aes(x = weekday, y = n)) +
+  xlab("Weekday") +
+  ylab("Arrests") +
+  theme_minimal(base_size = 12, base_family = "Georgia") +
+  geom_point(aes(size = n, color = n), alpha = 0.7, show.legend = FALSE) +
+  scale_size_area(guide = FALSE, max_size = 15) +
+  labs(title = "Homeless Arrests By Weekday in San Francisco", 
+       subtitle = "311 Call Data 2017-2019: Source: SFPD",
+       caption = "Graphic by Wells") 
+
+
+#  WELLS ANSWER - **Question**: What is the trend for arrests over the time period?  
+
+SF %>% 
+  filter(grepl("ARR", disposition)) %>%
+  count(yearmo) %>% 
+  group_by(yearmo) %>% 
+  ggplot(aes(x = yearmo, y = n, fill=n)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  geom_smooth(method = lm, se=FALSE, color = "red") +
+  theme(axis.text.x = element_text(angle=90)) +
+  #Changes angle of x axis labels
+  #coord_flip() +    #this makes it a horizontal bar chart instead of vertical
+  labs(title = "Arrest Trends on Homeless Calls in San Francisco", 
+       subtitle = "Arrests Based on 311 Call Data by Month 2017-2019",
+       caption = "Graphic by Wells",
+       y="Number of Calls",
+       x="Year")
+
+
+# - **Question**: What are the hours most likely for complaints?    
+SF$hour <- hour(SF$call_date_time)
+
+SF %>% 
+  count(hour) %>% 
+  group_by(hour) %>% 
+  ggplot(aes(x = hour, y = n, fill=n)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=90)) +
+  #Changes angle of x axis labels
+  #coord_flip() +    #this makes it a horizontal bar chart instead of vertical
+  labs(title = "Hours of Homeless Calls, San Francisco", 
+       subtitle = "311 Call Data by Month 2017-2019",
+       caption = "Graphic by Wells",
+       y="Number of Calls",
+       x="Hour")  
+
+
