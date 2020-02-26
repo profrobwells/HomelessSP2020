@@ -37,10 +37,13 @@ ChildrenAR <- janitor::clean_names(ChildrenAR)
 #
 #------------------------------------
 # FOR WEDNESDAY'S CLASS
-# Change Over Time
 #------------------------------------
 #For your reference!
 https://profrobwells.github.io/HomelessSP2020/SF_311_Calls_UofA.html
+
+#------------------------------------
+# Change Over Time
+#------------------------------------
 
 #Here's the 2013-14 Data
 https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2013-2014-demographics-data-for-districts-2.xlsx?raw=true
@@ -91,3 +94,24 @@ newtable <- newtable %>%
 #percentage point difference
 #
 #Answer:
+#
+#-------------------------------------------------
+# Bonus Task if you have finished everything....
+#-------------------------------------------------
+
+# Elias and Whitney made graphs. Improve on this code:
+# Fix the labels, add numbers to the bars
+
+TopTenPct <- ChildrenAR %>%
+  filter(district_percent_homeless > 0.1) %>%
+  arrange(desc(district_percent_homeless))
+#
+
+TopTenPct %>% 
+  ggplot(aes(x = reorder(district_name, district_percent_homeless), y = district_percent_homeless, fill=district_percent_hispanic)) + 
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +
+  labs(title = "Arkansas School Districts by Homelessness", 
+       caption = "Graphic by Weiss",
+       y="Percentage of Students Experiencing Homelessness",
+       x="District")
