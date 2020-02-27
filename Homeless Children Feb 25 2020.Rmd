@@ -1,0 +1,131 @@
+---
+title: "Homeless Children in Arkansas"
+author: "Rob Wells"
+date: "2/25/2020"
+output: 
+  html_document:
+      toc: true
+      toc_float: true
+      toc_depth: 4
+---
+ 
+### Reporting on Homelessness: Data Analysis for Journalists   
+
+### Jour 405v, Jour 5003, Spring 2020    
+
+--------------------------------------------------------------------
+# Part 1: Quick Start
+Load tidyverse, janitor, lubidate
+```{r include=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+Load Data
+```{r}
+ChildrenAR <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2018-2019-demographic-data-for-districts.xlsx?raw=true", which = "Data", skip=8)
+```
+Clean up column names to they are R friendly
+```{r}
+ChildrenAR <- janitor::clean_names(ChildrenAR)
+```
+
+- **Question**: Run a summary of the homeless data. 
+
+What is the median homeless percentage?   
+What is the average (mean)?   
+What is the maximum?   
+
+```{r}
+summary(ChildrenAR$district_percent_homeless)
+```
+
+- **Question*: Create a table with all school districts with more than 10% homeless
+
+HINT: SEE THE R_Intro_Jan15, the code for "Build a table with all counties above that median income"
+
+```{r}
+  ChildrenAR %>% 
+  select(district_name, district_percent_homeless) %>% 
+  filter(district_percent_homeless >= .10) %>% 
+  arrange(desc(district_percent_homeless))
+
+```
+
+```{r}
+Children10 <- ChildrenAR %>% 
+  select(district_name, district_percent_homeless) %>% 
+  filter(district_percent_homeless >= .10) %>% 
+  arrange(desc(district_percent_homeless))
+```
+
+## Change Over Time
+
+For your reference!
+https://profrobwells.github.io/HomelessSP2020/SF_311_Calls_UofA.html
+
+- **Here's the 2013-14 Data**  
+https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2013-2014-demographics-data-for-districts-2.xlsx?raw=true
+
+- **Question:** Import it into a dataframe, call it ChildrenAR2013, clean the labels
+
+Answer:
+```{r}
+ChildrenAR2013 <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2013-2014-demographics-data-for-districts-2.xlsx?raw=true", which = "Data", skip=8)
+# Clean up column names to they are R friendly
+ChildrenAR2013 <- janitor::clean_names(ChildrenAR2013)
+```
+
+- **Question:** Create a table with just the district name and the homeless data for 2018-19   
+
+Call it table2018
+```{r}
+table2018 <- ChildrenAR %>% 
+  select(district_name, district_percent_homeless) %>% 
+  arrange(desc(district_percent_homeless))
+```
+
+Here's how to rename a column name
+```{r}
+colnames(Children10)[2] <- "Pct_Homeless_2018"
+#It takes the second column in Children10 and assigns the new name #"Pct_Homeless_2018"
+names(Children10)
+```
+- **Question:** Rename the appropriate table2018 column to "Pct_Homeless_2018"
+```{r}
+colnames(table2018)[2] <- "Pct_Homeless_2018"
+```
+- **Follow the same steps for the 2013 data:** 
+Create table2013 
+Rename the appropriate table2013 column to "Pct_Homeless_2013"
+```{r}
+table2013 <- ChildrenAR2013 %>% 
+  select(district_name, district_percent_homeless) %>% 
+  arrange(desc(district_percent_homeless))
+#
+colnames(table2013)[2] <- "Pct_Homeless_2013"
+```
+- **Joining Tables**
+```{r}
+newtable <- table2018 %>% 
+  inner_join(table2013, by=("district_name"))
+```
+This matches the tables by name. They are joined by values in district_name
+- **Question: how many records were left out?**
+
+Math!
+This creates a new column with the percentage point difference
+```{r}
+newtable <- newtable %>% 
+  mutate(difference = Pct_Homeless_2018-Pct_Homeless_2013)
+```
+
+- **Question**: Produce a table with top 20 schools with the greatest increase in student homelessness since 2013, measured by percentage point difference
+
+```{r}
+top10worst <-  newtable %>% 
+  top_n(20, difference) %>% 
+  arrange(desc(difference))
+```
+
+## --30--
