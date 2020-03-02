@@ -7,7 +7,7 @@
 #
 #This lesson references the Machlis Ch 11 map exercise as a template. 
 #It also references Andrew Ba Tran's map tutorial
-/Users/robwells/Dropbox/HomelessSP2020/Readings/Tran - Geolocating.pdf
+https://github.com/profrobwells/HomelessSP2020/blob/master/Readings/Tran%20-%20Geolocating.pdf
 #
 #-------------------------------------------------------------#
 #               HERE WE GO!                                  #
