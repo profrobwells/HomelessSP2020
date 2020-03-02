@@ -13,6 +13,8 @@
 #               HERE WE GO!                                  #
 #-------------------------------------------------------------#
 #
+library(tidyverse)
+
 #Load ChildrenAR
 ChildrenAR <- rio::import("2018-2019-demographic-data-for-districts.xlsx", which = "Data", skip=8)
 #
@@ -30,12 +32,12 @@ School_Address <- rio::import("./Data/SDI Districts Printed-02-26-2020-11_38_05.
 School_Address$LEA <- as.numeric(School_Address$LEA)
 ChildrenAR$LEA <- ChildrenAR$district_lea
 
-abc <- School_Address %>% 
-  select(LEA, Name, Address) %>% 
-  inner_join(ChildrenAR, by="LEA")
-
-#df with 261. which ones dropped? lost three
-
+#QUESTION: Join School_Address to ChildrenAR
+#
+#
+#QUESTION: How many records in new combined dataframe? What is the difference?
+#
+#
 #NEXT, we geocode the addresses using mutate_geocode
 #This is a little involved... 
 
@@ -50,10 +52,7 @@ abc <- School_Address %>%
 schools_geocoded <- rio::import("./Data/schools_geocoded.csv")
 View(schools_geocoded)
 #
-#Simplify names
-schools_geocoded$Name_Cleaned <- gsub("SCHOOL", "", schools_geocoded$Name) 
-schools_geocoded$Name_Cleaned <- gsub("DISTRICT", "", schools_geocoded$Name)
-schools_geocoded$Name_Cleaned <- gsub("SCHOOL", "", schools_geocoded$Name_Cleaned) 
+#QUESTION: How can we simplify the school district names?
 #
 #Let’s pull town shapes for Arkansas with tigris.
 # If you don't have tigris or ggplot2 or sf installed yet, uncomment and run the line belo
@@ -63,6 +62,7 @@ library(sf)
 library(ggplot2)
 # set sf option
 options(tigris_class = "sf")
+options(tigris_use_cache = TRUE)
 ar_schools <- school_districts("AR", cb=T)
 #
 #Basic Map of School Districts
@@ -74,10 +74,11 @@ ggplot(ar_schools) +
 #Adding layer with homeless data
 set.seed(25)
 #
-#Creating subset 
-bf<- schools_geocoded %>% 
-  select(district_name, Name_Cleaned, district_percent_homeless, lon, lat) %>% 
-  filter(district_percent_homeless >= .10)
+#QUESTION: Create a temporary table "bf" that has the district school names, percent homeless
+#lon, lat and filtered for districts with more that 10% homeless
+
+#
+
 #Plot map with subset data
 ggplot(ar_schools) +
   geom_sf() +
@@ -104,6 +105,10 @@ ggplot(ar_schools) +
   labs(title="Homeless Children in Arkansas",
        subtitle = " School Districts With More Than 10% Homeless Students",
        caption = "Source: Ar Dept of Education. Graphic by Wells. 3-1-2020")
+
+#Question: Create a dataframe with the top 10 districts with the largest
+#percentage increase in homelessness since 2013 and map it.
+
 
 #------------------------
 #Machlis - Maps in R Ch 11
