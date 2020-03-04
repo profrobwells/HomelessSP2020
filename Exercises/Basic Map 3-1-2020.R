@@ -16,17 +16,14 @@ https://github.com/profrobwells/HomelessSP2020/blob/master/Readings/Tran%20-%20G
 library(tidyverse)
 
 #Load ChildrenAR
-ChildrenAR <- rio::import("2018-2019-demographic-data-for-districts.xlsx", which = "Data", skip=8)
-#
-#Wells version
-ChildrenAR <- rio::import("./Data/2018-2019-demographic-data-for-districts.xlsx", which = "Data", skip=8)
+ChildrenAR <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2018-2019-demographic-data-for-districts.xlsx?raw=true", which = "Data", skip=8)
 #
 # Clean up column names to they are R friendly
 ChildrenAR <- janitor::clean_names(ChildrenAR)
 #
 #Join ChildrenAR with addresses
 #Addresses
-School_Address <- rio::import("./Data/SDI Districts Printed-02-26-2020-11_38_05.xlsx", skip =1)
+School_Address <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/SDI%20Districts%20Printed-02-26-2020-11_38_05.xlsx?raw=true", skip =1)
 
 #convert School address LEA to numeric and match
 School_Address$LEA <- as.numeric(School_Address$LEA)
@@ -49,28 +46,45 @@ ChildrenAR$LEA <- ChildrenAR$district_lea
 #write.csv(schools_geocoded, "schools_geocoded.csv")
 #
 #Shortcut!!!
-schools_geocoded <- rio::import("./Data/schools_geocoded.csv")
+schools_geocoded <- rio::import("https://raw.githubusercontent.com/profrobwells/HomelessSP2020/master/Data/schools_geocoded.csv")
 View(schools_geocoded)
 #
 #QUESTION: How can we simplify the school district names?
 #
 #Let’s pull town shapes for Arkansas with tigris.
-# If you don't have tigris or ggplot2 or sf installed yet, uncomment and run the line belo
-#install.packages("tigris", "sf", "ggplot2")
-library(tigris) 
-library(sf) 
+# If you don't have tigris or ggplot2 or sf installed yet, uncomment and run the line below
+
+
+#---------------------
+#March 2 revision
+#install.packages('tigris')
+library(tidyverse)
+library(devtools)
+library(tigris)
 library(ggplot2)
-# set sf option
-options(tigris_class = "sf")
-options(tigris_use_cache = TRUE)
-ar_schools <- school_districts("AR", cb=T)
-#
+library(tmap)
+
+tigris_cache_dir("/Users/robwells/Dropbox/HomelessSP2020/cache")
+#Restart R. Top Menu: Session | Restart R
+library(tigris)
+library(sf)
+library(tidyverse)
+library(devtools)
+library(ggplot2)
+library(tmap)
+
+#plotting an simple features map
+ar_schools <- school_districts("AR", class ="sf")
+
 #Basic Map of School Districts
 ggplot(ar_schools) +
   geom_sf() +
   theme_void() +
   theme(panel.grid.major = element_line(colour = 'transparent')) + labs(title="AR School Districts")
 #
+
+#------------------
+
 #Adding layer with homeless data
 set.seed(25)
 #
@@ -110,22 +124,22 @@ ggplot(ar_schools) +
 #percentage increase in homelessness since 2013 and map it.
 
 
+
+
+
+
+
 #------------------------
 #Machlis - Maps in R Ch 11
-library(devtools)
+
 #Install mapping material
 #install devtools if you haven't already done so
 #install("devtools")
-
-devtools::install_github('walkerke/tigris')
-devtools::install_github('bhaskarvk/leaflet.extras', force = TRUE)
-
-#install.packages("tmap")
-#install.packages("tidycensus")
-#install.packages("ggmap")
-library(tidyverse) #loads dplyr, ggplot2, readr, tidyr,, purrr, tibble, stringr, forcats
+install.packages('tigris')
 
 
+library(devtools)
+library(tidyverse) 
 library(leaflet)
 library(glue)
 library(sf)
@@ -135,8 +149,14 @@ library(tidycensus)
 library(ggmap)
 library(htmltools)
 library(htmlwidgets)
-library(ggmap)
 library(tigris)
+
+
+#devtools::install_github('walkerke/tigris')
+#devtools::install_github('bhaskarvk/leaflet.extras', force = TRUE)
+#install.packages("tmap")
+#install.packages("tidycensus")
+#install.packages("ggmap")
 
 #load the map software
 library(tigris)
@@ -170,3 +190,23 @@ library(tigris)
 #1) a file defining a geographic area such as towns, counties, or states; 
 #2) a file with data about those units, such as which towns voted for what candidates
 #3) a way to merge the two, and then display the results.
+
+
+
+#older version March1
+
+#install.packages("tigris", "sf", "ggplot2")
+library(tigris) 
+library(sf) 
+library(ggplot2)
+# set sf option
+options(tigris_class = "sf")
+options(tigris_use_cache = TRUE)
+ar_schools <- school_districts("AR", cb=T)
+#
+#Basic Map of School Districts
+ggplot(ar_schools) +
+  geom_sf() +
+  theme_void() +
+  theme(panel.grid.major = element_line(colour = 'transparent')) + labs(title="AR School Districts")
+#
