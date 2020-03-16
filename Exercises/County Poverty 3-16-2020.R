@@ -79,7 +79,8 @@ Homeless <- ChildPoverty_sum %>% filter(homeless_pct_2019 > county_poverty_pct1)
 
 #With this table, answer the following questions:
 
-#1) Produce a summary table with the school districts you examined, the county poverty and homeless rate.
+#1) Produce a summary table from the ChildPoverty table with the school districts you examined, 
+# the county poverty and homeless rate.
 # Make a screenshot of the table and upload it to this discussion post.
 
 #2)Examine the homeless data carefully and do some research to determine the discrepancies, if any, between 
