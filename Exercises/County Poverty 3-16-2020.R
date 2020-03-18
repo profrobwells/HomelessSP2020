@@ -24,10 +24,12 @@ glimpse(CountyPovertyAll)
 #Let's shave down this big boy to the key columns. Import just the geo_id columns, the county name and the hc03_vc161
 
 #Your answer:
+CountyPoverty <- CountyPovertyAll %>% select(geo_id, geo_id2, geo_display_label,hc03_vc161)
 
 #Rename the appropriate columns to "county" and "poverty_pct"
 
 #Your Answer
+colnames(CountyPoverty)[3:4] <- c("county", "county_poverty_pct")
 
 #Drop the first row of text
 CountyPoverty = CountyPoverty[-c(1),]
@@ -35,10 +37,16 @@ CountyPoverty = CountyPoverty[-c(1),]
 #Convert to numeric data
 
 #Your answer
+CountyPoverty$poverty_pct <- as.numeric(CountyPoverty$poverty_pct)
 
 #Cut "County, Arkansas"
 #Your answer
-
+CountyPoverty$county_bak <- CountyPoverty$county
+CountyPoverty$county <- gsub("County, Arkansas", "", CountyPoverty$county)
+#REMEMBER TO CLEAN OUT THE BLANK SPACES!
+#This line is critical to linkage of the two databases
+#I have the same line in the tutorial on Line 62
+CountyPoverty$county <- gsub(" ", "", CountyPoverty$county)
 
 #Part 2: Join with district homeless data
 #This dataset tells us the county names and ids, which we link to the Census Data and the Homeless children data
