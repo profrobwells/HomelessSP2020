@@ -1,7 +1,7 @@
 ---
 title: "Homeless Children in Arkansas"
-author: "Rob Wells"
-date: "2/25/2020"
+author: "Rob Wells, Ph.D."
+date: "3/28/2020"
 output: 
   html_document:
       toc: true
@@ -9,12 +9,12 @@ output:
       toc_depth: 4
 ---
  
-### Reporting on Homelessness: Data Analysis for Journalists   
+## Reporting on Homelessness: Data Analysis for Journalists   
 
-### Jour 405v, Jour 5003, Spring 2020    
+#### Jour 405v, Jour 5003, Spring 2020    
 
 --------------------------------------------------------------------
-# Part 1: Quick Start
+# Part 1: Homeless Children Data
 Load tidyverse, janitor, lubidate
 ```{r include=FALSE}
 library(tidyverse)
@@ -22,7 +22,7 @@ library(janitor)
 library(lubridate)
 ```
 Load Data
-```{r}
+```{r include=FALSE}
 ChildrenAR <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2018-2019-demographic-data-for-districts.xlsx?raw=true", which = "Data", skip=8)
 ```
 Clean up column names to they are R friendly
@@ -30,7 +30,7 @@ Clean up column names to they are R friendly
 ChildrenAR <- janitor::clean_names(ChildrenAR)
 ```
 
-- **Question**: Run a summary of the homeless data. 
+- **Run a summary of the homeless data.** 
 
 What is the median homeless percentage?   
 What is the average (mean)?   
@@ -40,7 +40,7 @@ What is the maximum?
 summary(ChildrenAR$district_percent_homeless)
 ```
 
-- **Question*: Create a table with all school districts with more than 10% homeless
+- **Create a table with all school districts with more than 10% homeless**
 
 HINT: SEE THE R_Intro_Jan15, the code for "Build a table with all counties above that median income"
 
@@ -51,7 +51,7 @@ HINT: SEE THE R_Intro_Jan15, the code for "Build a table with all counties above
   arrange(desc(district_percent_homeless))
 
 ```
-
+Create Children10 table, from code above, table with all school districts with more than 10% homeless
 ```{r}
 Children10 <- ChildrenAR %>% 
   select(district_name, district_percent_homeless) %>% 
@@ -64,34 +64,30 @@ Children10 <- ChildrenAR %>%
 For your reference!
 https://profrobwells.github.io/HomelessSP2020/SF_311_Calls_UofA.html
 
-- **Here's the 2013-14 Data**  
-https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2013-2014-demographics-data-for-districts-2.xlsx?raw=true
+Import 2013-14 homeless data, call it ChildrenAR2013, clean the labels
 
-- **Question:** Import it into a dataframe, call it ChildrenAR2013, clean the labels
-
-Answer:
 ```{r}
 ChildrenAR2013 <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2013-2014-demographics-data-for-districts-2.xlsx?raw=true", which = "Data", skip=8)
 # Clean up column names to they are R friendly
 ChildrenAR2013 <- janitor::clean_names(ChildrenAR2013)
 ```
 
-- **Question:** Create a table with just the district name and the homeless data for 2018-19   
+- **Create a table with just the district name and the homeless data for 2018-19**      
 
 Call it table2018
 ```{r}
 table2018 <- ChildrenAR %>% 
-  select(district_name, district_percent_homeless) %>% 
+  select(district_name, district_percent_homeless, district_lea) %>% 
   arrange(desc(district_percent_homeless))
 ```
 
-Here's how to rename a column name
+Rename a column name
 ```{r}
 colnames(Children10)[2] <- "Pct_Homeless_2018"
 #It takes the second column in Children10 and assigns the new name #"Pct_Homeless_2018"
 names(Children10)
 ```
-- **Question:** Rename the appropriate table2018 column to "Pct_Homeless_2018"
+- **Rename the appropriate table2018 column to "Pct_Homeless_2018" ** 
 ```{r}
 colnames(table2018)[2] <- "Pct_Homeless_2018"
 ```
@@ -100,27 +96,44 @@ Create table2013
 Rename the appropriate table2013 column to "Pct_Homeless_2013"
 ```{r}
 table2013 <- ChildrenAR2013 %>% 
-  select(district_name, district_percent_homeless) %>% 
+  select(district_name, district_percent_homeless,  district_lea) %>% 
   arrange(desc(district_percent_homeless))
 #
 colnames(table2013)[2] <- "Pct_Homeless_2013"
+#
+#convert all text to lowercase
+#table2013$district_name <- tolower(table2013$district_name)
 ```
-- **Joining Tables**
+- **Joining Tables**   
 ```{r}
 newtable <- table2018 %>% 
-  inner_join(table2013, by=("district_name"))
+  inner_join(table2013, by=("district_lea"))
 ```
-This matches the tables by name. They are joined by values in district_name
-- **Question: how many records were left out?**
+This matches the tables by name. They are joined by values in district_name   
 
-Math!
+- **How many records were left out?**    
+8 Records.   
+Use anti_join to determine the 2013 records not in 2018 
+```{r}
+table2013 %>% 
+  anti_join(table2018, by=("district_lea"))
+```
+
+Making a table with the same thing above
+```{r}
+leftout <- table2013 %>% 
+  anti_join(table2018, by=("district_lea"))
+```
+
+- **Math!**  
+
 This creates a new column with the percentage point difference
 ```{r}
 newtable <- newtable %>% 
   mutate(difference = Pct_Homeless_2018-Pct_Homeless_2013)
 ```
 
-- **Question**: Produce a table with top 20 schools with the greatest increase in student homelessness since 2013, measured by percentage point difference
+- **Produce a table with top 20 schools with the greatest increase in student homelessness since 2013, measured by percentage point difference**  
 
 ```{r}
 top10worst <-  newtable %>% 
@@ -128,4 +141,278 @@ top10worst <-  newtable %>%
   arrange(desc(difference))
 ```
 
-## --30--
+# Basic Map Exercise
+- **We will create a map of homeless children by schools in Arkansas**  
+
+This lesson references the Machlis Ch 11 map exercise as a template. 
+It also references Andrew Ba Tran's map tutorial
+https://github.com/profrobwells/HomelessSP2020/blob/master/Readings/Tran%20-%20Geolocating.pdf
+
+#### HERE WE GO!
+
+Use ChildrenAR
+Join ChildrenAR with addresses
+
+Load Addresses
+```{r}
+School_Address <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/SDI%20Districts%20Printed-02-26-2020-11_38_05.xlsx?raw=true", skip =1)
+```
+
+Convert School address LEA to numeric and match
+```{r}
+School_Address$LEA <- as.numeric(School_Address$LEA)
+ChildrenAR$LEA <- ChildrenAR$district_lea
+```
+Now we join School_Address to ChildrenAR
+
+```{r}
+abc <- School_Address %>% 
+  select(LEA, Name, Address) %>% 
+  inner_join(ChildrenAR, by="LEA")
+```
+
+#QUESTION: How many records in new combined dataframe? What is the difference?
+
+```{r}
+abc_not <- School_Address %>% 
+  select(LEA, Name, Address) %>% 
+  anti_join(ChildrenAR, by="LEA")
+```
+
+Df with 261. which ones dropped? Lost two
+
+NEXT, we geocode the addresses using mutate_geocode
+This is a little involved... 
+
+What I did:
+?register_google
+Google API Key https://www.youtube.com/watch?v=1JNwpp5L4vM
+https://console.cloud.google.com/apis/credentials?folder=&organizationId=&project=phonic-botany-269820
+register_google(key = "MY TOP SECRET KEY")
+schools_geocoded <- mutate_geocode(abc, Address)
+write.csv(schools_geocoded, "schools_geocoded.csv")
+
+- **Shortcut!!!**
+
+```{r include=FALSE}
+schools_geocoded <- rio::import("https://raw.githubusercontent.com/profrobwells/HomelessSP2020/master/Data/schools_geocoded.csv")
+```
+
+Next: Simplify the school district names
+
+```{r}
+schools_geocoded$Name_Cleaned <- gsub("SCHOOL", "", schools_geocoded$Name)
+```
+
+```{r}
+schools_geocoded$Name_Cleaned <- gsub("DISTRICT", "", schools_geocoded$Name)
+```
+
+```{r}
+schools_geocoded$Name_Cleaned <- gsub("SCHOOL", "", schools_geocoded$Name_Cleaned) 
+```
+Load map town shapes for Arkansas with Tigris.
+
+If you don't have tigris or ggplot2 or sf installed yet, uncomment and run the line below
+```{r include=FALSE}
+#install.packages("tigris", "sf", "ggplot2")
+library(tigris) 
+library(sf) 
+library(ggplot2)
+```
+```{r}
+# set sf option
+options(tigris_class = "sf")
+options(tigris_use_cache = TRUE)
+```
+
+And we finally load the school district boundary map
+```{r include=FALSE}
+#Uncomment if you want to run this
+ar_schools <- school_districts("05")
+```
+
+Basic Map of School Districts
+```{r}
+ggplot(ar_schools) +
+  geom_sf() +
+  theme_void() +
+  theme(panel.grid.major = element_line(colour = 'transparent')) + labs(title="AR School Districts")
+```
+
+
+Adding layer with homeless data   
+
+```{r}
+set.seed(25)
+```
+We create a temporary table "bf" that has the district school names, percent homeless, the lon, lat and filtered for districts with more that 10% homeless
+
+```{r}
+bf<- schools_geocoded %>% 
+  select(district_name, Name_Cleaned, district_percent_homeless, lon, lat) %>% 
+  filter(district_percent_homeless >= .10)
+```
+
+Plot map with subset data
+
+```{r}
+ggplot(ar_schools) +
+  geom_sf() +
+  geom_point(data=bf, aes(x=lon, y=lat, size=district_percent_homeless, color=district_percent_homeless), show.legend = FALSE) + 
+  theme_void() +
+  theme(panel.grid.major = element_line(colour = 'transparent')) + 
+  labs(title="Homeless Children in Arkansas",
+       subtitle = " School Districts With More Than 10% Homeless Students",
+       caption = "Source: Ar Dept of Education. Graphic by Wells. 3-1-2020")
+```
+
+
+Clean it up!   
+
+```{r}
+bf <- janitor::clean_names(bf)
+```
+
+Plot with labels
+```{r}
+library(ggrepel)
+```
+
+```{r}
+ggplot(ar_schools) +
+  geom_sf() +
+  geom_point(data=bf, aes(x=lon, y=lat, 
+                          size=district_percent_homeless, color=district_percent_homeless), 
+             show.legend = FALSE) + 
+  geom_label_repel(data=bf, aes(x=lon, y=lat, label = name_cleaned), size=2.5, color="blue") +
+  theme_void() +
+  theme(panel.grid.major = element_line(colour = 'transparent')) + 
+  labs(title="Homeless Children in Arkansas",
+       subtitle = " School Districts With More Than 10% Homeless Students",
+       caption = "Source: Ar Dept of Education. Graphic by Wells. 3-1-2020")
+```
+
+<br>    
+
+- **Task:Create a dataframe with the top 10 districts with the largest
+percentage increase in homelessness since 2013 and map it.**   
+
+
+# Homeless Children Data Analysis
+#March 14, 2019
+
+In this section, we analyze homeless children data over time and compare previous years of homeless children data.
+--Take the 2018-2019 data and compare to the 2014-2015 data
+--Following the same workflow in the Census exercise, import the two datasets, 
+rename the columns, clean the district names, calculate percentage change in homeless
+1) --Produce a table with statewide changes in homelessness and the special needs index from 2018-2019 vs 2014-2015. 
+ 2) --Produce a smaller chart with all of the districts you have contacted 
+
+## Part 1: import the two datasets, rename the columns, clean the district names
+
+ChildrenAR is already loaded from above. Rename as ChildAR2019
+
+```{r}
+ChildAR2019 <- ChildrenAR
+```
+Rename columns anticipating merge with older data
+
+```{r}
+colnames(ChildAR2019)[3] <- c("enroll_2019")
+colnames(ChildAR2019)[5:6] <- c("special_ed_pct_2019", "homeless_pct_2019")
+```
+
+Load ChildrenAR 2014-15 data, clean and rename
+```{r}
+ChildAR2015 <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2014-2015-demographics-for-districts.xlsx?raw=true", which = "Data", skip=8)
+ChildAR2015 <- janitor::clean_names(ChildAR2015)
+colnames(ChildAR2015)[3] <- c("enroll_2015")
+colnames(ChildAR2015)[5:6] <- c("special_ed_pct_2015", "homeless_pct_2015")
+```
+
+SELECT SUBSET WITH DISTRICT NAME POVERTY SPECIAL NEEDS ENROLLMENT AND MERGE
+Merge Census Data
+
+```{r}
+temp <- ChildAR2019 %>%
+  inner_join(ChildAR2015, by=("district_lea"))
+```
+Boil it down
+
+```{r}
+Child2019_15 <- temp %>% 
+  select(district_name.x, enroll_2019, enroll_2015, special_ed_pct_2019, special_ed_pct_2015,
+                       homeless_pct_2019, homeless_pct_2015, district_lea)
+colnames(Child2019_15)[1] <- c("district")
+```
+
+Simplify the school district names
+Backup distict name
+```{r}
+Child2019_15$district_bak <- Child2019_15$district
+Child2019_15$district <- gsub("SCHOOL", "", Child2019_15$district) 
+Child2019_15$district  <- gsub("DISTRICT", "", Child2019_15$district)
+Child2019_15$district <- gsub("SCHOOL", "", Child2019_15$district) 
+Child2019_15$district <- gsub(" ", "", Child2019_15$district) 
+```
+Part 2: Calculate calculate percentage change in homeless: How has homeless changed from 2015-19?
+
+```{r}
+Child2019_15 <- Child2019_15 %>%
+  mutate(homeless_pct_diff = (homeless_pct_2019-homeless_pct_2015)/homeless_pct_2015) %>%
+  arrange(desc(homeless_pct_diff))
+```
+
+```{r}
+library(formattable)
+
+Child2019_15$homeless_pct_diff <- percent(Child2019_15$homeless_pct_diff)
+```
+How has special needs changed from 2015-19
+
+```{r}
+Child2019_15 <- Child2019_15 %>%
+  mutate(special_pct_diff = (special_ed_pct_2019-special_ed_pct_2015)/special_ed_pct_2015) %>%
+  arrange(desc(special_pct_diff))
+
+library(formattable)
+
+Child2019_15$special_pct_diff <- percent(Child2019_15$special_pct_diff)
+```
+
+--Produce a table with statewide changes in homelessness and the special needs index from 2018-2019 vs 2014-1025. 
+
+```{r}
+Child2019_15 %>% 
+  select(district, homeless_pct_diff, special_pct_diff)
+```
+
+Save to a table
+```{r}
+Child2019_15_summary <- Child2019_15 %>% 
+  select(district, homeless_pct_diff, special_pct_diff)
+```
+
+Your schools
+```{r}
+Child2019_15 %>% 
+filter(district=="BERRYVILLE" | district=="JASPER" | district=="LEADHILL")
+```
+
+## Notes Beyond this point
+
+install.packages("ggpubr")
+library("ggpubr")
+
+
+cor(x, y, method = c("pearson", "kendall", "spearman"))
+cor.test(x, y, method=c("pearson", "kendall", "spearman"))
+
+res <- cor.test(Child2019_15$homeless_pct_2019, Child2019_15$special_ed_pct_2019, 
+                    method = "pearson")
+                    
+res
+
+res1<- cor.test(Child2019_15$, Child2019_15$special_pct_diff, 
+                    method = "pearson")
