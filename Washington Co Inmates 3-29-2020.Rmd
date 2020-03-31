@@ -1,0 +1,219 @@
+---
+title: "Analysis of Washington County Jail Inmate Data"
+author: "Michael Adkison and Rob Wells"
+date: "3/31/2020"
+output: 
+  html_document:
+      toc: true
+      toc_float: true
+      toc_depth: 4
+---
+ 
+
+#### Jour 405v, Jour 5003, Spring 2020    
+
+#### Advanced Reporting and Data Analysis
+
+#### Reporting on Homelessness in Northwest Arkansas
+
+--------------------------------------------------------------------
+
+
+
+```{r include=FALSE}
+library(rio)
+library(janitor)
+library(tidyverse)
+library(ggplot2)
+theme_set(theme_classic())
+```
+
+Importing Data
+```{r}
+Roster_March18 <- rio::import("https://docs.google.com/spreadsheets/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/edit#gid=814904708", which = "March18Roster")
+Roster_March18 <- janitor::clean_names(Roster_March18)
+```
+
+Rename
+```{r}
+WashCoRoster <- Roster_March18
+glimpse(WashCoRoster)
+```
+
+```{r}
+WashCoHomeless <- WashCoRoster %>%
+  select(homeless)
+```
+
+```{r}
+summary(WashCoHomeless)
+```
+
+#Pie Chart graphic for percentage of homelessness
+```{r}
+count.data <- data.frame(
+  class = c("Homeless", "Not Homeless"),
+  n = c(72, 565),
+  prop = c(11.3, 88.7)
+)
+```
+
+```{r}
+count.data <- count.data %>%
+  arrange(desc(class)) %>%
+  mutate(lab.ypos = cumsum(prop) - 0.5*prop)
+
+theme_set(theme_classic(base_size = 18))
+
+mycols <- c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF")
+
+ggplot(count.data, aes(x = "", y = prop, fill = class)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0)+
+  geom_text(aes(y = lab.ypos, label = n), color = "white")+
+  scale_fill_manual(values = mycols) +
+  theme_void() +
+  labs(title= "Homeless Detainees in Washington County Detention Center",
+       subtitle="Data collected from detainee roster on March 28, 2020",
+       caption= "Graphic by Michael Adkison",
+       x= "Homeless Inmates",
+       y= "Non-Homeless Inmates")
+```
+
+
+#Graphic for the different types of charges
+
+```{r}
+ChargeStatistics <- rio::import("./Data/Wash Co Inmates 031820.xlsx", which = "Charge Statistics") %>%
+  select("Inmate", "Felony (Y/N)", "Drug/DWI", "Assault-Violence", "Administrative", "Family-related") %>%
+  filter(Inmate== "TOTAL")
+```
+
+```{r}
+dat <- data.frame(
+  Number_of_inmates = c(5, 25, 13, 63, 3),
+  Charge= as.factor(c("Felony", "Drug/Driving", "Assault/Violence", "Administrative", "Family-related"))
+)
+
+dat_long <- dat %>%
+  gather("Stat", "Value", -Charge)
+
+ggplot(dat_long, aes(x = Charge, y = Value, fill= Value), show.legend=FALSE) +
+  geom_col(position = "dodge") +
+  coord_flip() +   
+  geom_text(aes(label= Value, x= Charge, y= Value), hjust=-1, vjust=1) +
+  labs(title= "Types of Charges for Homeless Detainees",
+       subtitle= "Data collected from detainee roster on March 28, 2020",
+       caption= "Graphic by Michael Adkison",
+       x= "Type of charge",
+       y= "Number of occurrences")
+```
+
+
+```{r}
+HomelessInmates <- WashCoRoster %>%
+  filter(homeless== "Yes")
+```
+
+#### Wells Analysis
+Compare Roster
+https://drive.google.com/file/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/view?usp=sharing
+
+    
+    March 18 Roster = 637 detainees, 72 homeless or 11%
+    March 27 Roster = 418 detainees, 42 homeless or 10%
+    Overall Jail population reduced by 219 as March 27 from March 18. That accounts for 20 new detainees over the period.
+    238 of the March 18 detainees were gone by March 27. Of this, 33 were homeless, or 14%.
+    Records show 33 fewer homeless people in jail comparing the 399 matching records
+    399 inmate names on March 27 remain, they match the March 18  roster
+    20 new inmates since March 18
+    3 of the new inmates are homeless
+    
+March 18: 637 detainees
+```{r}
+Roster_March18 <- rio::import("https://docs.google.com/spreadsheets/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/edit#gid=814904708", which = "March18Roster")
+Roster_March18 <- janitor::clean_names(Roster_March18)
+```
+#Clean names
+```{r}
+Roster_March18$name2 <- gsub(",", "_", Roster_March18$name_last_first)
+Roster_March18$name2 <- gsub("\\s", "", Roster_March18$name2)
+```
+File exam of March 18
+```{r}
+glimpse(Roster_March18)
+```
+
+Latest Roster: 418 detainees
+```{r}
+Roster_March27 <- rio::import("https://docs.google.com/spreadsheets/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/edit#gid=1284726909", which = "March27Roster")
+Roster_March27 <- janitor::clean_names(Roster_March27)
+```
+
+Clean names
+```{r}
+Roster_March27$name2 <- gsub(",", "_", Roster_March27$name_last_first)
+Roster_March27$name2 <- gsub("\\s", "", Roster_March27$name2)
+```
+
+File Exam of March 27
+```{r}
+glimpse(Roster_March27)
+```
+
+Number homeless on March 18: 72
+```{r}
+Roster_March18 %>% 
+  count(homeless) %>% 
+  arrange(desc(n))
+```
+March 18 Percent Homeless: 11.3% 
+```{r}
+(72/637)*100
+
+```
+
+Number homeless on March 27: 42
+```{r}
+Roster_March27 %>% 
+  count(homeless) %>% 
+  arrange(desc(n))
+```
+There are 30 fewer homeless people in jail since March 27
+
+March 27 Percent Homeless: 10%
+```{r}
+(42/418)*100
+
+```
+
+Who remains - 399 match
+```{r}
+Remain <- Roster_March27 %>% 
+  inner_join(Roster_March18, by="name2")
+```
+
+Who was added - use antiJoin - shows 20 additions since March 18
+```{r}
+NewInmates <- Roster_March27 %>% 
+  anti_join(Roster_March18, by="name2")
+```
+
+Who departed - flip the antiJoin, start with March 18
+
+```{r}
+Departed <- Roster_March18 %>% 
+  anti_join(Roster_March27, by="name2")
+```
+
+Summary stats on departed: 237 records
+```{r}
+Departed %>% 
+  count(homeless) %>% 
+  arrange(desc(n))
+```
+```{r}
+NewInmates %>% 
+  count(homeless) %>% 
+  arrange(desc(n))
+```
