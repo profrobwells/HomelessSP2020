@@ -27,8 +27,7 @@ library(tidyverse)
 library(ggplot2)
 theme_set(theme_classic())
 ```
-
-Importing Data
+### Importing Data
 ```{r}
 Roster_March18 <- rio::import("https://docs.google.com/spreadsheets/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/edit#gid=814904708", which = "March18Roster")
 Roster_March18 <- janitor::clean_names(Roster_March18)
@@ -36,38 +35,40 @@ Roster_March18 <- janitor::clean_names(Roster_March18)
 
 Rename
 ```{r}
-WashCoRoster <- Roster_March18
-glimpse(WashCoRoster)
+glimpse(Roster_March18)
 ```
 
 ```{r}
-WashCoHomeless <- WashCoRoster %>%
-  select(homeless)
+Homeless_March18 <- Roster_March18 %>%
+  filter(homeless == "Yes")
 ```
 
 ```{r}
-summary(WashCoHomeless)
+glimpse(Homeless_March18)
 ```
 
-#Pie Chart graphic for percentage of homelessness
+### Graphic for percentage of homelessness
+
+```{r echo=TRUE}
+df <- Roster_March18 %>%
+  count(homeless)
+df
+```
+
 ```{r}
-count.data <- data.frame(
-  class = c("Homeless", "Not Homeless"),
-  n = c(72, 565),
-  prop = c(11.3, 88.7)
-)
+count.data <- df %>% 
+  data.frame(prop = c(88.7, 11.3))
 ```
 
 ```{r}
 count.data <- count.data %>%
-  arrange(desc(class)) %>%
   mutate(lab.ypos = cumsum(prop) - 0.5*prop)
 
 theme_set(theme_classic(base_size = 18))
 
 mycols <- c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF")
 
-ggplot(count.data, aes(x = "", y = prop, fill = class)) +
+ggplot(count.data, aes(x = "", y = prop, fill = homeless)) +
   geom_bar(width = 1, stat = "identity", color = "white") +
   coord_polar("y", start = 0)+
   geom_text(aes(y = lab.ypos, label = n), color = "white")+
@@ -81,38 +82,48 @@ ggplot(count.data, aes(x = "", y = prop, fill = class)) +
 ```
 
 
-#Graphic for the different types of charges
+### Charges Facing Inmates
 
 ```{r}
-ChargeStatistics <- rio::import("./Data/Wash Co Inmates 031820.xlsx", which = "Charge Statistics") %>%
-  select("Inmate", "Felony (Y/N)", "Drug/DWI", "Assault-Violence", "Administrative", "Family-related") %>%
-  filter(Inmate== "TOTAL")
+ChargeStatistics <- rio::import("https://docs.google.com/spreadsheets/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/edit#gid=1846079051", which = "March18ChargeStats")
+ChargeStatistics <- janitor::clean_names(ChargeStatistics)
 ```
 
+Remove row 74 with totals
 ```{r}
-dat <- data.frame(
-  Number_of_inmates = c(5, 25, 13, 63, 3),
-  Charge= as.factor(c("Felony", "Drug/Driving", "Assault/Violence", "Administrative", "Family-related"))
-)
+ChargeStatistics <- ChargeStatistics[-c(74),] 
+```
+Summary of charges by category
+```{r}
+df2 <- ChargeStatistics %>% 
+  summarize_if(is.numeric, sum, na.rm=TRUE)
 
-dat_long <- dat %>%
-  gather("Stat", "Value", -Charge)
+df3 <- add_rownames(df2) %>% 
+  gather(Charge, n, -rowname) %>% 
+  spread(rowname, n) 
 
-ggplot(dat_long, aes(x = Charge, y = Value, fill= Value), show.legend=FALSE) +
-  geom_col(position = "dodge") +
+colnames(df3)[2] <- "Total"
+
+df3$Charge <- gsub("felony_y_n", "Felony", df3$Charge)
+df3$Charge <- gsub("drug_dwi", "Drug or DWI", df3$Charge)
+df3$Charge <- gsub("administrative", "Administrative", df3$Charge)
+df3$Charge <- gsub("assault_violence", "Assault of Violence", df3$Charge)
+df3$Charge <- gsub("family_related", "Family Related", df3$Charge)
+df3
+```
+Chart of charges
+
+```{r}
+ggplot(df3, aes(x = Charge, y = Total, fill= Total)) +
+  geom_col(position = "dodge", show.legend=FALSE) +
   coord_flip() +   
-  geom_text(aes(label= Value, x= Charge, y= Value), hjust=-1, vjust=1) +
-  labs(title= "Types of Charges for Homeless Detainees",
-       subtitle= "Data collected from detainee roster on March 28, 2020",
+  geom_text(aes(label= Total, x= Charge, y= Total), hjust=-1, vjust=1) +
+    scale_y_continuous(limits=c(0, 75)) +
+  labs(title= "Charges for Homeless Detainees",
+       subtitle= "Washington Co. Sheriff Detainee Roster, 3/28/2020",
        caption= "Graphic by Michael Adkison",
-       x= "Type of charge",
+       x= "",
        y= "Number of occurrences")
-```
-
-
-```{r}
-HomelessInmates <- WashCoRoster %>%
-  filter(homeless== "Yes")
 ```
 
 #### Wells Analysis
@@ -120,7 +131,7 @@ Compare Roster
 https://drive.google.com/file/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/view?usp=sharing
 
     
-    March 18 Roster = 637 detainees, 72 homeless or 11%
+    March 18 Roster = 637 detainees, 73 homeless or 11%
     March 27 Roster = 418 detainees, 42 homeless or 10%
     Overall Jail population reduced by 219 as March 27 from March 18. That accounts for 20 new detainees over the period.
     238 of the March 18 detainees were gone by March 27. Of this, 33 were homeless, or 14%.
@@ -129,91 +140,113 @@ https://drive.google.com/file/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/view?usp=shari
     20 new inmates since March 18
     3 of the new inmates are homeless
     
-March 18: 637 detainees
-```{r}
-Roster_March18 <- rio::import("https://docs.google.com/spreadsheets/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/edit#gid=814904708", which = "March18Roster")
-Roster_March18 <- janitor::clean_names(Roster_March18)
-```
-#Clean names
+Clean names
 ```{r}
 Roster_March18$name2 <- gsub(",", "_", Roster_March18$name_last_first)
 Roster_March18$name2 <- gsub("\\s", "", Roster_March18$name2)
 ```
 File exam of March 18
+
+```{r}
+#March 18 Roster: 637 detainees
+nrow(Roster_March18)
+```
+
 ```{r}
 glimpse(Roster_March18)
 ```
 
-Latest Roster: 418 detainees
+
 ```{r}
 Roster_March27 <- rio::import("https://docs.google.com/spreadsheets/d/1lsP37hPHXQ_KlBOsDJw5s7ehQlmeBqdX/edit#gid=1284726909", which = "March27Roster")
 Roster_March27 <- janitor::clean_names(Roster_March27)
-```
-
-Clean names
-```{r}
+#Clean Names
 Roster_March27$name2 <- gsub(",", "_", Roster_March27$name_last_first)
 Roster_March27$name2 <- gsub("\\s", "", Roster_March27$name2)
-```
-
-File Exam of March 27
-```{r}
+#March 27 Roster: 418 detainees
+nrow(Roster_March27)
 glimpse(Roster_March27)
 ```
 
-Number homeless on March 18: 72
+Number homeless on March 18: 73
 ```{r}
-Roster_March18 %>% 
+bf <- Roster_March18 %>% 
   count(homeless) %>% 
-  arrange(desc(n))
-```
-March 18 Percent Homeless: 11.3% 
-```{r}
-(72/637)*100
+  arrange(desc(n)) %>% 
+  mutate(Pct = (100*(n/(sum(n)))),'%') 
+
+bf$Pct <- round(bf$Pct, 2)
+bf
 
 ```
-
 Number homeless on March 27: 42
 ```{r}
-Roster_March27 %>% 
+wtf <- Roster_March27 %>% 
   count(homeless) %>% 
-  arrange(desc(n))
-```
-There are 30 fewer homeless people in jail since March 27
+  arrange(desc(n)) %>% 
+    mutate(Pct = (100*(n/(sum(n)))),'%') 
 
-March 27 Percent Homeless: 10%
-```{r}
-(42/418)*100
-
+wtf$Pct <- round(wtf$Pct, 2)
+nrow(wtf)
+wtf
 ```
+There are 31 fewer homeless people in jail since March 27. But this doesn't account for the number of homeless people released and the number of homeless added
 
 Who remains - 399 match
 ```{r}
 Remain <- Roster_March27 %>% 
   inner_join(Roster_March18, by="name2")
+nrow(Remain)
+```
+```{r}
+head(Remain)
 ```
 
+
 Who was added - use antiJoin - shows 20 additions since March 18
+
 ```{r}
 NewInmates <- Roster_March27 %>% 
   anti_join(Roster_March18, by="name2")
+nrow(NewInmates)
+```
+```{r}
+head(NewInmates)
 ```
 
-Who departed - flip the antiJoin, start with March 18
+
+Who departed - flip the antiJoin, start with March 18. 238 people
 
 ```{r}
 Departed <- Roster_March18 %>% 
   anti_join(Roster_March27, by="name2")
+head(Departed)
 ```
 
-Summary stats on departed: 237 records
+```{r}
+glimpse(Departed)
+```
+### Chart who was released
+33 Homeless people
+```{r}
+Departed %>% 
+  count(homeless)
+```
+
+
+
 ```{r}
 Departed %>% 
   count(homeless) %>% 
-  arrange(desc(n))
+ggplot() +
+  geom_bar(mapping=aes(x= homeless, y= n, fill= n), stat = "identity", show.legend = FALSE) +
+  coord_flip() +   
+  geom_text(aes(label= n, x= homeless, y= n), hjust=-1, vjust=1) +
+  scale_y_continuous(limits=c(0, 225)) +
+  labs(title= "Housing Status for Released Detainees",
+       subtitle= "Wash. Co. Sheriff Detainee Roster, 3/18 and 3/28/2020",
+       caption= "Graphic by Michael Adkison",
+       x= "Housing Status",
+       y= "Number of released detainees")
 ```
-```{r}
-NewInmates %>% 
-  count(homeless) %>% 
-  arrange(desc(n))
-```
+
