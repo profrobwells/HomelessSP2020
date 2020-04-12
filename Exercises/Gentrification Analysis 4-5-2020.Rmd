@@ -1,0 +1,122 @@
+---
+title: "Gentrification in Fayetteville"
+output: html_notebook
+author: "Rob Wells"
+date: "4/5/2020"
+output: 
+  html_document:
+      toc: true
+      toc_float: true
+      toc_depth: 4
+---
+ 
+
+#### Jour 405v, Jour 5003, Spring 2020    
+
+#### Advanced Reporting and Data Analysis
+
+#### Reporting on Homelessness in Northwest Arkansas
+
+--------------------------------------------------------------------
+# Analysis of Zillow Data for Fayetteville
+
+Load libraries
+```{r}
+#install.packages("rio") 
+library(tidyverse)
+library(rio)
+```
+
+```{r}
+#Import all US cities
+Zillow <- rio::import('https://raw.githubusercontent.com/profrobwells/HomelessSP2020/master/Data/Zillow%20City_ZRI_AllhomesplusMultifamily.csv')
+
+```
+Filter to just Arkansas
+```{r}
+ZillowAR <- Zillow %>% filter(State == "AR")
+head(ZillowAR)
+```
+
+```{r}
+# Number columns
+ncol(ZillowAR)
+```
+```{r}
+# Number rows
+nrow(ZillowAR)
+```
+```{r}
+#check data types
+glimpse(ZillowAR)
+```
+
+```{r}
+#Clean Headers - Janitor package
+#install.packages("janitor")
+library(janitor)
+ZillowAR <- janitor::clean_names(ZillowAR)
+head(ZillowAR)
+```
+
+```{r}
+#Run stats on latest November 2019 data
+summary(ZillowAR$x2019_11)
+```   
+
+### Percent Change, 9/2010 to 11/2019
+
+```{r}
+Z_AR_PCT <- ZillowAR %>% 
+  select(region_name, metro, x2010_09, x2019_11) %>% 
+  mutate(Pct_Chg=((x2019_11-x2010_09)/(x2010_09))) 
+Z_AR_PCT
+```
+
+```{r}
+#To quickly format into percents, load
+#install.packages("formattable")
+library(formattable)
+#
+Z_AR_PCT$Pct_Chg <- percent(Z_AR_PCT$Pct_Chg)
+Z_AR_PCT
+```
+
+```{r}
+#Do some math - average value for Arkansas Sept 2010
+avg2010 <- mean(Z_AR_PCT$x2010_09, na.rm=TRUE)
+avg2010
+```
+
+```{r}
+#Do some math - average value for Arkansas Nov 2019
+avg2019 <- mean(Z_AR_PCT$x2019_11, na.rm=TRUE)
+avg2019
+#Average value for Arkansas, Nov. 2019= 867.8966
+````
+
+```{r}
+avg <- ((avg2019-avg2010)/avg2010)*100
+
+avg <- round(avg, 2)
+avg
+```
+
+### Chart Data
+
+```{r}
+Z_AR_PCT %>% 
+  filter(Pct_Chg > .20) %>% 
+  ggplot(aes(x = reorder(region_name, Pct_Chg), y = Pct_Chg, fill = Pct_Chg)) +
+geom_col(position = "dodge", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_text(aes(label = Pct_Chg), hjust = -.5, size = 2) +
+  scale_y_continuous(limits=c(0, .45),labels = scales::percent) +
+  coord_flip() +
+  labs(title = "Arkansas Real Estate Values, 2010-2019",
+       subtitle = "Statewide Average: 12.7% Increase. ",
+       caption = "Graphic by Rob Wells, 4-5-2020",
+       y="Source: Zillow Housing Index",
+       x="")
+```
+###  -30-
