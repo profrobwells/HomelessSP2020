@@ -171,7 +171,7 @@ UA2010_19 %>%
 geom_col(position = "dodge", show.legend = FALSE) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   geom_text(aes(label = total_pct_change), hjust = -.5, size = 2) +
-  scale_y_continuous(limits=c(0, .10),labels = scales::percent) +
+  #scale_y_continuous(limits=c(0, .10),labels = scales::percent) +
   coord_flip() +
   labs(title = "Percent Change in UofA Enrollment, 2010-2019",
        subtitle = "Total Enrollment: 27,559 in 2019",
@@ -295,52 +295,47 @@ write_csv(UA_Zillow, "UA_Zillow.csv")
 
 ```
 
+### Chart two items
+solution: https://stackoverflow.com/questions/3099219/ggplot-with-2-y-axes-on-each-side-and-different-scales
 
-###Notes Below Here
-
-#Graph Dual lines
+Convert to dates
 ```{r}
-UA_Zillow %>%
-    filter(Year!=2010) %>%
-  ggplot(aes(x = Year, y = Graduate)) +
-  geom_smooth(se=FALSE)+
-  #scale_x_continuous(breaks=c(2010:2019)) +
-  theme(axis.text.x = element_text(angle=90)) +
-  labs(title = "Enrollment and Real Estate, Fayetteville, 2010-19", 
-       subtitle = "Zillow Housing Index and UA Enrollment",
-       caption = "Graphic by Rob Wells, 4-15-2020",
-       x="Year",
-       y="Graduate")
+UA_Zillow$Year1 <- as.numeric(UA_Zillow$Year)
+
+UA_Zillow$Year1 <- as.Date(as.character(UA_Zillow$Year),format="%Y")
+#UA_Zillow$Year1 <- as.date(UA_Zillow$Year1)
+#UA_Zillow$Year1 <- year(UA_Zillow$Year1)
+#UA_Zillow$Year1 <- as.Date(UA_Zillow$Year1, origin="2010")
+UA_Zillow
+```
+
+### Dual Axis Chart    
+
+    -- First, UA Enrollment, as a pink bar
+    -- Second, Zillow index, as a blue line  
+    -- UA Enrollment is larger than the Zillow Index. It throws off the chart
+    -- We need to adjust it so both items are reflected on the same chart. Dual axis chart
+    -- So we adjust the Zillow index - multiply it by .20 - to better fit with the UA Enrollment graphic
+    -- We adjust the Zillow index scale by .235 to reflect the Zillow index, not the UA Enrollment
+
+
+```{r}
+
+chart <- ggplot() + 
+  geom_bar(mapping = aes(x = UA_Zillow$Year1, y = UA_Zillow$Total), stat = "identity", fill = "pink") +
+  geom_line(mapping = aes(x = UA_Zillow$Year1, y = UA_Zillow$ZillowIndex*20), size = 2, color = "blue", fill = "blue") + 
+  scale_x_date(name = "Year") +
+  scale_y_continuous(name = "UA Enrollment", 
+                     sec.axis = sec_axis(~. /23.5, name = "Zillow Index")) + 
+   theme(
+    axis.title.y = element_text(color = "pink"),
+    axis.title.y.right = element_text(color = "blue")) +
+  labs(title = "UA Enrollment, Fayetteville Real Estate Prices, 2010-2019",
+       subtitle = "Total Enrollment: 27,559 in 2019",
+       caption = "Graphic by Rob Wells, 4-15-2020")
+chart
 ```
 
 ```{r}
-UA_Zillow %>%
-    filter(Year!=2010) %>%
-  group_by(Year, Graduate, Law) %>% 
-  ggplot(aes(x = Year, y = Graduate, fill = Law, color=Law)) +
-   geom_smooth(se=FALSE)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  geom_text(aes(label = total_pct_change), hjust = -.5, size = 2) +
-  scale_y_continuous(limits=c(0, .45),labels = scales::percent) +
-  coord_flip() +
-  labs(title = "UA Enrollment, 2010-2019",
-       subtitle = " ",
-       caption = "Graphic by Rob Wells, 4-15-2020",
-       y="Source: UA Annual Report",
-       x="")
-```
-
-
-EF_type2 %>%
-  filter(year!=2019) %>%
-  group_by(year, type, score) %>% 
-  summarize(mean = mean(score))  %>% 
-  ggplot(aes(x = year, y = mean, fill=type, color=type)) +
-  geom_smooth(se=FALSE)+
-  scale_x_continuous(breaks=c(2000:2018)) +
-  theme(axis.text.x = element_text(angle=90)) +
-  labs(title = "Sentiment in News vs. Opinion: China Economic News", 
-       subtitle = "Sentiment Score: NYT, WSJ, LAT, WP, IUT: Economic Filter, 2000-2018.",
-       caption = "Bing sentiment dictionary on 4,046 articles. Source: ProQuest. Graphic by Rob Wells",
-       x="Year",
-       y="Sentiment score")
+ggsave(chart, file="chart.png",scale=2)
+```    
