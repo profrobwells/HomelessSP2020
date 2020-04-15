@@ -1,0 +1,346 @@
+---
+title: "Gentrification in Fayetteville"
+output: html_notebook
+author: "Rob Wells"
+date: "4/5/2020"
+output: 
+  html_document:
+      toc: true
+      toc_float: true
+      toc_depth: 4
+---
+ 
+
+#### Jour 405v, Jour 5003, Spring 2020    
+
+#### Advanced Reporting and Data Analysis
+
+#### Reporting on Homelessness in Northwest Arkansas
+
+--------------------------------------------------------------------
+# Analysis of Zillow Data for Fayetteville
+
+Load libraries
+```{r}
+#install.packages("rio") 
+library(tidyverse)
+library(rio)
+```
+
+```{r}
+#Import all US cities
+Zillow <- rio::import('https://raw.githubusercontent.com/profrobwells/HomelessSP2020/master/Data/Zillow%20City_ZRI_AllhomesplusMultifamily.csv')
+
+```
+Filter to just Arkansas
+```{r}
+ZillowAR <- Zillow %>% filter(State == "AR")
+head(ZillowAR)
+```
+
+```{r}
+# Number columns
+ncol(ZillowAR)
+```
+```{r}
+# Number rows
+nrow(ZillowAR)
+```
+```{r}
+#check data types
+glimpse(ZillowAR)
+```
+
+```{r}
+#Clean Headers - Janitor package
+#install.packages("janitor")
+library(janitor)
+ZillowAR <- janitor::clean_names(ZillowAR)
+head(ZillowAR)
+```
+
+```{r}
+#Run stats on latest November 2019 data
+summary(ZillowAR$x2019_11)
+```   
+
+### Percent Change, 9/2010 to 11/2019
+
+```{r}
+Z_AR_PCT <- ZillowAR %>% 
+  select(region_name, metro, x2010_09, x2019_11) %>% 
+  mutate(Pct_Chg=((x2019_11-x2010_09)/(x2010_09))) 
+Z_AR_PCT
+```
+
+```{r}
+#To quickly format into percents, load
+#install.packages("formattable")
+library(formattable)
+#
+Z_AR_PCT$Pct_Chg <- percent(Z_AR_PCT$Pct_Chg)
+Z_AR_PCT
+```
+
+```{r}
+#Do some math - average value for Arkansas Sept 2010
+avg2010 <- mean(Z_AR_PCT$x2010_09, na.rm=TRUE)
+avg2010
+```
+
+```{r}
+#Do some math - average value for Arkansas Nov 2019
+avg2019 <- mean(Z_AR_PCT$x2019_11, na.rm=TRUE)
+avg2019
+#Average value for Arkansas, Nov. 2019= 867.8966
+```
+
+```{r}
+avg <- ((avg2019-avg2010)/avg2010)*100
+
+avg <- round(avg, 2)
+avg
+```
+
+### Chart Data
+
+```{r}
+Z_AR_PCT %>% 
+  filter(Pct_Chg > .20) %>% 
+  ggplot(aes(x = reorder(region_name, Pct_Chg), y = Pct_Chg, fill = Pct_Chg)) +
+geom_col(position = "dodge", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_text(aes(label = Pct_Chg), hjust = -.5, size = 2) +
+  scale_y_continuous(limits=c(0, .45),labels = scales::percent) +
+  coord_flip() +
+  labs(title = "Arkansas Real Estate Values, 2010-2019",
+       subtitle = "Statewide Average: 12.7% Increase. ",
+       caption = "Graphic by Rob Wells, 4-5-2020",
+       y="Source: Zillow Housing Index",
+       x="")
+```
+###  Import Enrollment Data
+Assignment to use Tabula scrape data from Fall Semester Enrollment, 2010-2019 
+https://learn.uark.edu/bbcswebdav/pid-8109956-dt-content-rid-92421291_1/xid-92421291_1
+
+```{r}
+x <- rio::import('https://raw.githubusercontent.com/profrobwells/HomelessSP2020/master/Data/tabula-UofA%20annual%20report%202019.csv')
+```
+
+```{r}
+UA2010_19 <- as.data.frame(t(x))
+```
+
+```{r}
+UA2010_19 <- UA2010_19 %>% 
+  row_to_names(row_number = 1)
+UA2010_19
+```
+```{r}
+colnames(UA2010_19)[1] <- "Year"
+UA2010_19[1:6] <- lapply(UA2010_19[1:6], as.character)
+glimpse(UA2010_19)
+```
+```{r}
+UA2010_19$Total <- as.numeric(gsub(",", "", UA2010_19$Total))
+UA2010_19$Undergraduate <- as.numeric(gsub(",", "", UA2010_19$Undergraduate))
+UA2010_19$Law <- as.numeric(gsub(",", "", UA2010_19$Law))
+UA2010_19$Graduate <- as.numeric(gsub(",", "", UA2010_19$Graduate))
+UA2010_19$`New Freshmen` <- as.numeric(gsub(",", "", UA2010_19$`New Freshmen`))
+UA2010_19
+```
+
+```{r}
+UA2010_19 <- UA2010_19 %>% 
+ mutate(total_pct_change = (Total/lag(Total)-1)) 
+#UA2010_19$total_pct_change <- round(UA2010_19$total_pct_change, 2)
+UA2010_19
+```
+```{r}
+#Format into percents
+#library(formattable)
+#
+UA2010_19$total_pct_change <- percent(UA2010_19$total_pct_change)
+UA2010_19
+```
+### Chart Data
+
+```{r}
+UA2010_19 %>% 
+  ggplot(aes(x = Year, y = total_pct_change, fill = total_pct_change)) +
+geom_col(position = "dodge", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_text(aes(label = total_pct_change), hjust = -.5, size = 2) +
+  scale_y_continuous(limits=c(0, .10),labels = scales::percent) +
+  coord_flip() +
+  labs(title = "Percent Change in UofA Enrollment, 2010-2019",
+       subtitle = "Total Enrollment: 27,559 in 2019",
+       caption = "Graphic by Rob Wells, 4-15-2020",
+       y="Source: UA Annual Report",
+       x="")
+```
+
+###Align With Zillow Data for Fayetteville
+
+Subset Fayetteville Zillow data
+ZillowAR <- Zillow %>% filter(State == "AR")
+```{r}
+FayZillow <- ZillowAR %>% 
+  filter(region_id == "31543")
+```
+
+Average by years
+ mutate(total_pct_change = (Total/lag(Total)-1)) 
+
+```{r}
+write_csv(FayZillow, "FayZillow.csv")
+
+```
+
+ 
+```{r}
+z1 <-  FayZillow %>% 
+  mutate(Yr2010 = (x2010_09 + x2010_10 + x2010_11 + x2010_12)/4) 
+```
+
+```{r}
+FayZillow1 <-  FayZillow %>% 
+  mutate(Yr2010 = rowSums(.[7:10])/4) %>%  
+  mutate(Yr2011 = rowSums(.[11:22])/12) %>% 
+  mutate(Yr2012 = rowSums(.[23:34])/12) %>% 
+  mutate(Yr2013 = rowSums(.[35:46])/12) %>%
+  mutate(Yr2014 = rowSums(.[47:58])/12) %>% 
+  mutate(Yr2015 = rowSums(.[59:70])/12) %>% 
+  mutate(Yr2016 = rowSums(.[71:82])/12) %>%
+  mutate(Yr2017 = rowSums(.[83:94])/12) %>%
+  mutate(Yr2018 = rowSums(.[95:106])/12) %>% 
+  mutate(Yr2019 = rowSums(.[107:117])/11)
+```
+
+
+problem with 2013
+```{r}
+z2 <-  FayZillow %>% 
+  mutate(Yr2013 = rowSums(.[35:46], na.rm=TRUE)/11)
+```
+
+```{r}
+FayZillow1 <-  FayZillow %>% 
+  mutate(Yr2010 = rowSums(.[7:10])/4) %>%  
+  mutate(Yr2011 = rowSums(.[11:22])/12) %>% 
+  mutate(Yr2012 = rowSums(.[23:34])/12) %>% 
+  mutate(Yr2013 = rowSums(.[35:46], na.rm=TRUE)/11) %>%
+  mutate(Yr2014 = rowSums(.[47:58])/12) %>% 
+  mutate(Yr2015 = rowSums(.[59:70])/12) %>% 
+  mutate(Yr2016 = rowSums(.[71:82])/12) %>%
+  mutate(Yr2017 = rowSums(.[83:94])/12) %>%
+  mutate(Yr2018 = rowSums(.[95:106])/12) %>% 
+  mutate(Yr2019 = rowSums(.[107:117])/11)
+```
+
+```{r}
+FayZillowYR <- FayZillow1 %>% 
+  select(region_name, Yr2010, Yr2011, Yr2012, Yr2013, Yr2014, Yr2015, Yr2016,
+         Yr2017, Yr2018, Yr2019)
+FayZillowYR
+```
+
+```{r}
+FayZillowYR = as_tibble(t(FayZillowYR), rownames = "row_names")
+
+```
+
+```{r}
+FayZillowYR <- as.data.frame(FayZillowYR)
+FayZillowYR
+```
+```{r}
+FayZillowYR <- FayZillowYR %>% 
+  row_to_names(row_number = 1)
+FayZillowYR
+```
+```{r}
+colnames(FayZillowYR)[1:2] <- c("Year", "ZillowIndex")
+FayZillowYR[2] <- lapply(FayZillowYR[2], as.numeric)
+glimpse(FayZillowYR)
+```
+```{r}
+FayZillowYR$Year <- gsub("Yr", "", FayZillowYR$Year)
+FayZillowYR
+```
+
+```{r}
+UA_Zillow <- UA2010_19 %>% 
+  inner_join(FayZillowYR, by = ("Year"))
+UA_Zillow
+```
+
+```{r}
+UA_Zillow <- UA_Zillow %>% 
+ mutate(Zillow_pct_change = (ZillowIndex/lag(ZillowIndex)-1)) 
+UA_Zillow
+```
+```{r}
+#Format into percents
+#library(formattable)
+#
+UA_Zillow$Zillow_pct_change <- percent(UA_Zillow$Zillow_pct_change)
+UA_Zillow
+```
+
+
+
+```{r}
+write_csv(UA_Zillow, "UA_Zillow.csv")
+
+```
+
+
+###Notes Below Here
+
+#Graph Dual lines
+```{r}
+UA_Zillow %>%
+    filter(Year!=2010) %>%
+  ggplot(aes(x = Year, y = Graduate)) +
+  geom_smooth(se=FALSE)+
+  #scale_x_continuous(breaks=c(2010:2019)) +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(title = "Enrollment and Real Estate, Fayetteville, 2010-19", 
+       subtitle = "Zillow Housing Index and UA Enrollment",
+       caption = "Graphic by Rob Wells, 4-15-2020",
+       x="Year",
+       y="Graduate")
+```
+
+```{r}
+UA_Zillow %>%
+    filter(Year!=2010) %>%
+  group_by(Year, Graduate, Law) %>% 
+  ggplot(aes(x = Year, y = Graduate, fill = Law, color=Law)) +
+   geom_smooth(se=FALSE)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_text(aes(label = total_pct_change), hjust = -.5, size = 2) +
+  scale_y_continuous(limits=c(0, .45),labels = scales::percent) +
+  coord_flip() +
+  labs(title = "UA Enrollment, 2010-2019",
+       subtitle = " ",
+       caption = "Graphic by Rob Wells, 4-15-2020",
+       y="Source: UA Annual Report",
+       x="")
+```
+
+
+EF_type2 %>%
+  filter(year!=2019) %>%
+  group_by(year, type, score) %>% 
+  summarize(mean = mean(score))  %>% 
+  ggplot(aes(x = year, y = mean, fill=type, color=type)) +
+  geom_smooth(se=FALSE)+
+  scale_x_continuous(breaks=c(2000:2018)) +
+  theme(axis.text.x = element_text(angle=90)) +
+  labs(title = "Sentiment in News vs. Opinion: China Economic News", 
+       subtitle = "Sentiment Score: NYT, WSJ, LAT, WP, IUT: Economic Filter, 2000-2018.",
+       caption = "Bing sentiment dictionary on 4,046 articles. Source: ProQuest. Graphic by Rob Wells",
+       x="Year",
+       y="Sentiment score")
