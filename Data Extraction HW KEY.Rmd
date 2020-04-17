@@ -1,0 +1,216 @@
+---
+title: "Data Extraction Homework KEY"
+author: "Rob Wells, Ph.D."
+date: "April 17, 2020"
+output: html_document
+---
+ Instructions
+Data Assignment for Thursday, April 16
+
+    Use Tabula to scrape the the number of students from within the State of Arkansas, from out of State, and of international students for the last five years:UofA municipal bond disclose documents and enrollment trends  
+    Load these tables into Google Sheets or your GitHub account 
+    Import them into R. Use R Markdown
+    
+
+```{r}
+library(tidyverse)
+library(rio)
+library(janitor)
+```
+Import data
+```{r}
+df <- rio::import("https://docs.google.com/spreadsheets/d/1VXJrRc42Q998HnI6lUA_Ja6_ToUwBTd5Hq7x2Ly3M0Q/edit?usp=sharing")
+```
+
+
+```{r}
+UA2015_19 <- as.data.frame(t(df))
+```
+
+```{r}
+UA2015_19 <- UA2015_19 %>% 
+  row_to_names(row_number = 1)
+UA2015_19
+```
+```{r}
+colnames(UA2015_19)[1] <- "Year"
+UA2015_19[1:4] <- lapply(UA2015_19[1:4], as.character)
+glimpse(UA2015_19)
+```
+```{r}
+library(janitor)
+UA2015_19 <- janitor::clean_names(UA2015_19)
+head(UA2015_19)
+
+
+```
+
+
+```{r}
+UA2015_19$in_state <- as.numeric(gsub(",", "", UA2015_19$in_state))
+UA2015_19$out_of_state <- as.numeric(gsub(",", "", UA2015_19$out_of_state))
+UA2015_19$international <- as.numeric(gsub(",", "", UA2015_19$international))
+UA2015_19
+```
+Calculate percentage change per year for in-state, out-of-state, international
+
+```{r}
+UA2015_19 <- UA2015_19 %>%
+    mutate(Pct_InState = (in_state/lag(in_state)-1))
+```
+
+```{r}
+UA2015_19 <- UA2015_19 %>%
+    mutate(Pct_OutState = (out_of_state/lag(out_of_state)-1))
+```
+
+```{r}
+UA2015_19 <- UA2015_19 %>%
+    mutate(Pct_Intl = (international/lag(international)-1))
+```
+    Create a new total by year that adds the in-state,out-of-state and international
+
+
+```{r}
+UA2015_19 <- UA2015_19 %>%
+   mutate(Total = (in_state + out_of_state + international))
+UA2015_19
+```
+
+```{r}
+UA2015_19 <- UA2015_19 %>%
+   mutate(TotalPctChg = (Total/lag(Total)-1))
+UA2015_19
+```
+
+```{r}
+#Format into percents
+library(formattable)
+#
+UA2015_19$TotalPctChg <- percent(UA2015_19$TotalPctChg)
+UA2015_19
+```
+
+
+Graph percentage change over the year of this new total.
+```{r}
+UA2015_19 %>% 
+  ggplot(aes(x = year, y = TotalPctChg, fill = TotalPctChg)) +
+geom_col(position = "dodge", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_text(aes(label = TotalPctChg), hjust = -.5, size = 2) +
+  coord_flip() +
+  labs(title = "Percent Change in UofA Enrollment, 2015-2019",
+       subtitle = "Total Enrollment: 27,559 in 2019",
+       caption = "Graphic by Rob Wells, 4-17-2020",
+       y="Source: UA Municipal Bond Disclosure",
+       x="")
+```
+
+Then: Import Zillow data
+
+    Retrieve Zillow data.  http://files.zillowstatic.com/research/public/Metro/Metro_Zri_AllHomesPlusMultifamily.csv
+    Put Zillow data on Google Sheets, Import into R. Use the same R Markdown document
+    Calculate percentage change per year of the Zillow index for Fayetteville only.
+    Graph percentage change per year in the Zillow index
+
+```{r}
+#Import all US cities
+Zillow <- rio::import('http://files.zillowstatic.com/research/public/Metro/Metro_Zri_AllHomesPlusMultifamily.csv')
+
+```
+Filter to just Fayetteville
+```{r}
+ZillowAR <- Zillow %>% filter(RegionID == "394590")
+head(ZillowAR)
+```
+```{r}
+#Clean Headers - Janitor package
+#install.packages("janitor")
+library(janitor)
+ZillowAR <- janitor::clean_names(ZillowAR)
+head(ZillowAR)
+```
+Calculate percentage change per year of the Zillow index for Fayetteville only.
+
+
+First, total the years
+```{r}
+ZillowAR <-  ZillowAR %>%
+  mutate(Yr2010 = rowSums(.[4:7])/4) %>%  
+  mutate(Yr2011 = rowSums(.[8:19])/12) %>% 
+  mutate(Yr2012 = rowSums(.[20:31])/12) %>% 
+  mutate(Yr2013 = rowSums(.[32:43], na.rm=TRUE)/11) %>%
+  mutate(Yr2014 = rowSums(.[44:55])/12) %>% 
+  mutate(Yr2015 = rowSums(.[56:67])/12) %>% 
+  mutate(Yr2016 = rowSums(.[68:79])/12) %>%
+  mutate(Yr2017 = rowSums(.[80:91])/12) %>%
+  mutate(Yr2018 = rowSums(.[92:103])/12) %>% 
+  mutate(Yr2019 = rowSums(.[104:115])/12)
+```
+
+```{r}
+ZillowARYR <- ZillowAR %>% 
+  select(region_name, Yr2010, Yr2011, Yr2012, Yr2013, Yr2014, Yr2015, Yr2016,
+         Yr2017, Yr2018, Yr2019)
+ZillowARYR
+```
+
+
+
+```{r}
+ZillowARYRa = as_tibble(t(ZillowARYR), rownames = "row_names")
+ZillowARYRa
+```
+```{r}
+ZillowARYR <- as.data.frame(ZillowARYRa)
+ZillowARYR
+```
+
+```{r}
+colnames(ZillowARYR)[1:3] <- c("x",  "Year", "ZillowIndex")
+
+```
+
+```{r}
+#Remove rows with NA
+ZillowARYR <- ZillowARYR[-c(1,2), ] 
+ZillowARYR
+```
+```{r}
+ZillowARYR[3] <- lapply(ZillowARYR[3], as.numeric)
+glimpse(ZillowARYR)
+```
+```{r}
+ZillowARYR$Year <- gsub("Yr", "", ZillowARYR$Year)
+ZillowARYR
+```
+
+    Graph percentage change per year in the Zillow index
+```{r}
+ZillowARYR <- ZillowARYR %>%
+   mutate(PctChg = (ZillowIndex/lag(ZillowIndex)-1))
+ZillowARYR
+```
+
+```{r}
+#Format into percents
+#library(formattable)
+#
+ZillowARYR$PctChg <- percent(ZillowARYR$PctChg)
+ZillowARYR
+```
+
+Graph percentage change over the year of this new total.
+```{r}
+ZillowARYR %>% 
+  ggplot(aes(x = Year, y = PctChg, fill = PctChg)) +
+geom_col(position = "dodge", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_text(aes(label = PctChg), hjust = -.5, size = 2) +
+  coord_flip() +
+  labs(title = "Percent Change in Fayetteville Real Estate Values, 2014-2019",
+         caption = "Graphic by Rob Wells, 4-17-2020",
+       y="Source: Zillow Rental Index",
+       x="")
+```
