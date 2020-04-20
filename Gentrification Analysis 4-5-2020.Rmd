@@ -2,7 +2,7 @@
 title: "Gentrification in Fayetteville"
 output: html_notebook
 author: "Rob Wells"
-date: "4/5/2020"
+date: "4/20/2020"
 output: 
   html_document:
       toc: true
@@ -18,7 +18,7 @@ output:
 #### Reporting on Homelessness in Northwest Arkansas
 
 --------------------------------------------------------------------
-# Analysis of Zillow Data for Fayetteville
+# Analysis of Zillow Rent Index data for Arkansas & Fayetteville
 
 Load libraries
 ```{r}
@@ -26,6 +26,13 @@ Load libraries
 library(tidyverse)
 library(rio)
 ```
+Import Zillow Data: Zillow Rent Index (ZRI) Time Series: Multifamily, SFR, Condo/Co-op ($)     
+
+   --This measures changes in rent values for all U.S. cities in multifamily, single-family homes, condos and co-ops.
+
+   --The Zillow Rent Index (ZRI) is the median Rent Zestimate® (estimated monthly rental price) for a given geographic area on a given day, and includes the value of all single-family residences, condominiums, cooperatives and apartments in Zillow’s database, regardless of whether they are currently listed for rent. It is expressed in dollars.
+
+   --Details: https://www.zillow.com/research/zillow-rent-index-methodology-2393/
 
 ```{r}
 #Import all US cities
@@ -48,7 +55,7 @@ nrow(ZillowAR)
 ```
 ```{r}
 #check data types
-glimpse(ZillowAR)
+head(ZillowAR)
 ```
 
 ```{r}
@@ -120,12 +127,13 @@ geom_col(position = "dodge", show.legend = FALSE) +
        x="")
 ```
 ###  Import Enrollment Data
-Assignment to use Tabula scrape data from Fall Semester Enrollment, 2010-2019 
-https://learn.uark.edu/bbcswebdav/pid-8109956-dt-content-rid-92421291_1/xid-92421291_1
-
+Used Tabula to scrape data from University of Arkansas Fall Semester Enrollment, 2010-2019. p.27
+https://financial-affairs.uark.edu/PDFs/1819annualrept.pdf
 ```{r}
 x <- rio::import('https://raw.githubusercontent.com/profrobwells/HomelessSP2020/master/Data/tabula-UofA%20annual%20report%202019.csv')
 ```
+
+The following series of commands transforms and cleans the data for processing
 
 ```{r}
 UA2010_19 <- as.data.frame(t(x))
@@ -150,6 +158,7 @@ UA2010_19$`New Freshmen` <- as.numeric(gsub(",", "", UA2010_19$`New Freshmen`))
 UA2010_19
 ```
 
+Percentage Change in Enrollment
 ```{r}
 UA2010_19 <- UA2010_19 %>% 
  mutate(total_pct_change = (Total/lag(Total)-1)) 
@@ -182,7 +191,7 @@ geom_col(position = "dodge", show.legend = FALSE) +
 
 ###Align With Zillow Data for Fayetteville
 
-Subset Fayetteville Zillow data
+Subset Fayetteville Zillow Rent Index 
 ZillowAR <- Zillow %>% filter(State == "AR")
 ```{r}
 FayZillow <- ZillowAR %>% 
@@ -197,12 +206,14 @@ write_csv(FayZillow, "FayZillow.csv")
 
 ```
 
- 
+Calculate yearly averages in Zillow index to align with the UA enrollment data, which is by year 
+This is for 2010
 ```{r}
 z1 <-  FayZillow %>% 
   mutate(Yr2010 = (x2010_09 + x2010_10 + x2010_11 + x2010_12)/4) 
 ```
 
+Yearly averages for entire Zillow Rent Index
 ```{r}
 FayZillow1 <-  FayZillow %>% 
   mutate(Yr2010 = rowSums(.[7:10])/4) %>%  
@@ -218,12 +229,12 @@ FayZillow1 <-  FayZillow %>%
 ```
 
 
-problem with 2013
+problem with 2013: missing value. Fix to remove, recalculate
 ```{r}
 z2 <-  FayZillow %>% 
   mutate(Yr2013 = rowSums(.[35:46], na.rm=TRUE)/11)
 ```
-
+Recalculate with the missing 2013 value
 ```{r}
 FayZillow1 <-  FayZillow %>% 
   mutate(Yr2010 = rowSums(.[7:10])/4) %>%  
@@ -245,6 +256,7 @@ FayZillowYR <- FayZillow1 %>%
 FayZillowYR
 ```
 
+Commands to clean the table and align with the enrollment data
 ```{r}
 FayZillowYR = as_tibble(t(FayZillowYR), rownames = "row_names")
 
@@ -339,3 +351,10 @@ chart
 ```{r}
 ggsave(chart, file="chart.png",scale=2)
 ```    
+
+Percent change, 2010-2019
+```{r}
+UA_Zillow %>% 
+  filter(Year =="2010"| Year == "2019") %>% 
+   mutate(Pct2019_10 = (ZillowIndex/lag(ZillowIndex)-1)) 
+```
