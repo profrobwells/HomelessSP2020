@@ -1,0 +1,146 @@
+---
+title: "TidyCensus"
+author: "Rob Wells"
+date: "4/20/2020"
+output: html_document
+---
+
+## TidyCensus Tutorial Using Kyle Walker's How-To Page
+
+Source: vignettes/basic-usage.Rmd
+
+```{r}
+install.packages("tidycensus")
+library(tidycensus)
+library(tidyverse)
+```
+
+Get a Census API key. A key can be obtained from http://api.census.gov/data/key_signup.html.
+
+```{r}
+census_api_key("YOUR API KEY GOES HERE")
+```
+
+census_api_key("9cabe8a191a1f824755d4a1845f13cb08faa2c5f")
+
+
+There are two major functions implemented in tidycensus: 
+get_decennial, which grants access to the 1990, 2000, and 2010 decennial US Census APIs
+get_acs, which grants access to the 5-year American Community Survey APIs. 
+
+Example: In this basic example, let’s look at median gross rent by state in 1990:
+
+```{r}
+m90 <- get_decennial(geography = "state", variables = "H043A001", year = 1990)
+
+head(m90)
+```
+
+The function returns a tibble with four columns by default: 
+
+GEOID, which is an identifier for the geographical unit associated with the row; 
+NAME, which is a descriptive name of the geographical unit; 
+variable, which is the Census variable represented in the row; 
+and value, which is the value of the variable for that unit. 
+
+```{r}
+m90 %>%
+  ggplot(aes(x = value, y = reorder(NAME, value))) + 
+  geom_point()
+```
+
+Example #2, from Machlis book
+```{r}
+ca_income <- get_acs(state = "CA", geography = "county", variables = "B19013_001", geometry = TRUE) 
+```
+
+
+
+
+Geography in tidycensus
+
+To get decennial Census data or American Community Survey data, tidycensus users supply an argument to the required geography parameter. Arguments are formatted as consumed by the Census API, and specified in the table below. Not all geographies are available for all surveys, all years, and all variables. Most Census geographies are supported in tidycensus at the moment; if you require a geography that is missing from the table below, please file an issue at https://github.com/walkerke/tidycensus/issues.
+
+If state or county is in bold face in “Available by”, you are required to supply a state and/or county for the given geography.
+Geography 	Definition 	Available by 	Available in
+"us" 	United States 		get_acs()
+"region" 	Census region 		get_acs()
+"division" 	Census division 		get_acs()
+"state" 	State or equivalent 	state 	get_acs(), get_decennial()
+"county" 	County or equivalent 	state, county 	get_acs(), get_decennial()
+"county subdivision" 	County subdivision 	state, county 	get_acs(), get_decennial()
+"tract" 	Census tract 	state, county 	get_acs(), get_decennial()
+"block group" 	Census block group 	state, county 	get_acs(), get_decennial()
+"block" 	Census block 	state, county 	get_decennial()
+"place" 	Census-designated place 	state 	get_acs(), get_decennial()
+"alaska native regional corporation" 	Alaska native regional corporation 	state 	get_acs(), get_decennial()
+"american indian area/alaska native area/hawaiian home land" 	Federal and state-recognized American Indian reservations and Hawaiian home lands 	state 	get_acs(), get_decennial()
+"american indian area/alaska native area (reservation or statistical entity only)" 	Only reservations and statistical entities 	state 	get_acs()
+"american indian area (off-reservation trust land only)/hawaiian home land" 	Only off-reservation trust lands and Hawaiian home lands 	state 	get_acs()
+"metropolitan statistical area/micropolitan statistical area" 	Core-based statistical area 	state 	get_acs(), get_decennial()
+"combined statistical area" 	Combined statistical area 	state 	get_acs()
+"new england city and town area" 	New England city/town area 	state 	get_acs()
+"combined new england city and town area" 	Combined New England area 	state 	get_acs()
+"urban area" 	Census-defined urbanized areas 		get_acs()
+"congressional district" 	Congressional district for the year-appropriate Congress 	state 	get_acs(), get_decennial()
+"school district (elementary)" 	Elementary school district 	state 	get_acs()
+"school district (secondary)" 	Secondary school district 	state 	get_acs()
+"school district (unified)" 	Unified school district 	state 	get_acs()
+"public use microdata area" 	PUMA (geography associated with Census microdata samples) 	state 	get_acs()
+"zip code tabulation area" OR "zcta" 	Zip code tabulation area 		get_acs(), get_decennial()
+"state legislative district (upper chamber)" 	State senate districts 	state 	get_acs(), get_decennial()
+"state legislative district (lower chamber)" 	State house districts 	state 	get_acs(), get_decennial()
+Searching for variables
+
+Getting variables from the Census or ACS requires knowing the variable ID - and there are thousands of these IDs across the different Census files. 
+
+To rapidly search for variables, use the load_variables function. The function takes two required arguments: the year of the Census or endyear of the ACS sample, and the dataset - one of "sf1", "sf3", or "acs5". For ideal functionality, I recommend assigning the result of this function to a variable, setting cache = TRUE to store the result on your computer for future access, and using the View function in RStudio to interactively browse for variables.
+
+```{r}
+v17 <- load_variables(2017, "acs5", cache = TRUE)
+
+View(v17)
+```
+
+By filtering for “median age” I can quickly view the variable IDs that correspond to my query.
+Working with ACS data
+
+American Community Survey data differ from decennial Census data in that ACS data are based on an annual sample of approximately 3 million households, rather than a more complete enumeration of the US population. In turn, ACS data points are estimates characterized by a margin of error. tidycensus will always return the estimate and margin of error together for any requested variables. In turn, when requesting ACS data with tidycensus, it is not necessary to specify the "E" or "M" suffix for a variable name. Let’s fetch median household income data from the 2014-2018 ACS for counties in Vermont.
+
+```{r}
+ar <- get_acs(geography = "county", 
+              variables = c(medincome = "B19013_001"), 
+              state = "AR", 
+              year = 2018)
+
+ar
+```
+
+Black Employment by County
+```{r}
+ar_black <- get_acs(geography = "county", 
+              variables = c(black_employ = "C23002B_001"), 
+              state = "AR", 
+              year = 2018)
+
+ar_black
+```
+
+
+The output is similar to a call to get_decennial, but instead of a value column, get_acs returns estimate and moe columns for the ACS estimate and margin of error, respectively. moe represents the default 90 percent confidence level around the estimate; this can be changed to 95 or 99 percent with the moe_level parameter in get_acs if desired.
+
+As we have the margin of error, we can visualize the uncertainty around the estimate:
+```{r}
+ar %>%
+  mutate(NAME = gsub(" County, Arkansas", "", NAME)) %>%
+  ggplot(aes(x = estimate, y = reorder(NAME, estimate))) +
+  geom_errorbarh(aes(xmin = estimate - moe, xmax = estimate + moe)) +
+  geom_point(color = "red", size = 3) +
+  labs(title = "Household income by county in Arkansas",
+       subtitle = "2014-2018 American Community Survey",
+       y = "",
+       x = "ACS estimate (bars represent margin of error)")
+```
+
+
+See https://walkerke.github.io/tidycensus/ for more information about the package. Walker also has some helpful blog posts such as Compare US metropolitan area characteristics in R with tidycensus and tigris, at https://walkerke.github.io/2017/06/comparing-metros/.
