@@ -1,0 +1,233 @@
+---
+title: "Homeless Children in Arkansas"
+author: "Rob Wells, Ph.D."
+date: "3/28/2020"
+output: 
+  html_document:
+      toc: true
+      toc_float: true
+      toc_depth: 4
+---
+ 
+## Reporting on Homelessness: Data Analysis for Journalists   
+
+#### Jour 405v, Jour 5003, Spring 2020    
+
+--------------------------------------------------------------------
+# Part 1: Homeless Children Data
+Load tidyverse, janitor, lubidate
+```{r include=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+Load Data
+```{r include=FALSE}
+ChildrenAR <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2018-2019-demographic-data-for-districts.xlsx?raw=true", which = "Data", skip=8)
+```
+Clean up column names to they are R friendly
+```{r}
+ChildrenAR <- janitor::clean_names(ChildrenAR)
+```
+
+- **Run a summary of the homeless data.** 
+
+What is the median homeless percentage?   
+What is the average (mean)?   
+What is the maximum?   
+
+```{r}
+summary(ChildrenAR$district_percent_homeless)
+```
+
+- **Create a table with all school districts with more than 10% homeless**
+
+HINT: SEE THE R_Intro_Jan15, the code for "Build a table with all counties above that median income"
+
+```{r}
+  ChildrenAR %>% 
+  select(district_name, district_percent_homeless) %>% 
+  filter(district_percent_homeless >= .10) %>% 
+  arrange(desc(district_percent_homeless))
+
+```
+Create Children10 table, from code above, table with all school districts with more than 10% homeless
+```{r}
+Children10 <- ChildrenAR %>% 
+  select(district_name, district_percent_homeless) %>% 
+  filter(district_percent_homeless >= .10) %>% 
+  arrange(desc(district_percent_homeless))
+```
+
+## Change Over Time
+
+For your reference!
+https://profrobwells.github.io/HomelessSP2020/SF_311_Calls_UofA.html
+
+Import 2013-14 homeless data, call it ChildrenAR2013, clean the labels
+
+```{r}
+ChildrenAR2013 <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/2013-2014-demographics-data-for-districts-2.xlsx?raw=true", which = "Data", skip=8)
+# Clean up column names to they are R friendly
+ChildrenAR2013 <- janitor::clean_names(ChildrenAR2013)
+```
+
+- **Create a table with just the district name and the homeless data for 2018-19**      
+
+Call it table2018
+```{r}
+table2018 <- ChildrenAR %>% 
+  select(district_name, district_percent_homeless, district_lea) %>% 
+  arrange(desc(district_percent_homeless))
+```
+
+Rename a column name
+```{r}
+colnames(Children10)[2] <- "Pct_Homeless_2018"
+#It takes the second column in Children10 and assigns the new name #"Pct_Homeless_2018"
+names(Children10)
+```
+- **Rename the appropriate table2018 column to "Pct_Homeless_2018" ** 
+```{r}
+colnames(table2018)[2] <- "Pct_Homeless_2018"
+```
+- **Follow the same steps for the 2013 data:** 
+Create table2013 
+Rename the appropriate table2013 column to "Pct_Homeless_2013"
+```{r}
+table2013 <- ChildrenAR2013 %>% 
+  select(district_name, district_percent_homeless,  district_lea) %>% 
+  arrange(desc(district_percent_homeless))
+#
+colnames(table2013)[2] <- "Pct_Homeless_2013"
+#
+#convert all text to lowercase
+#table2013$district_name <- tolower(table2013$district_name)
+```
+- **Joining Tables**   
+```{r}
+newtable <- table2018 %>% 
+  inner_join(table2013, by=("district_lea"))
+```
+This matches the tables by name. They are joined by values in district_name   
+
+- **How many records were left out?**    
+8 Records.   
+Use anti_join to determine the 2013 records not in 2018 
+```{r}
+table2013 %>% 
+  anti_join(table2018, by=("district_lea"))
+```
+
+Making a table with the same thing above
+```{r}
+leftout <- table2013 %>% 
+  anti_join(table2018, by=("district_lea"))
+```
+
+- **Math!**  
+
+This creates a new column with the percentage point difference
+```{r}
+newtable <- newtable %>% 
+  mutate(difference = Pct_Homeless_2018-Pct_Homeless_2013)
+```
+
+- **Produce a table with top 20 schools with the greatest increase in student homelessness since 2013, measured by percentage point difference**  
+
+```{r}
+top10worst <-  newtable %>% 
+  top_n(20, difference) %>% 
+  arrange(desc(difference))
+```
+
+# Basic Map Exercise
+- **We will create a map of homeless children by schools in Arkansas**  
+
+This lesson references the Machlis Ch 11 map exercise as a template. 
+It also references Andrew Ba Tran's map tutorial
+https://github.com/profrobwells/HomelessSP2020/blob/master/Readings/Tran%20-%20Geolocating.pdf
+
+#### HERE WE GO!
+
+Use ChildrenAR
+Join ChildrenAR with addresses
+
+Load Addresses
+```{r}
+School_Address <- rio::import("https://github.com/profrobwells/HomelessSP2020/blob/master/Data/SDI%20Districts%20Printed-02-26-2020-11_38_05.xlsx?raw=true", skip =1)
+```
+
+Convert School address LEA to numeric and match
+```{r}
+School_Address$LEA <- as.numeric(School_Address$LEA)
+ChildrenAR$LEA <- ChildrenAR$district_lea
+```
+Now we join School_Address to ChildrenAR
+
+```{r}
+abc <- School_Address %>% 
+  select(LEA, Name, Address) %>% 
+  inner_join(ChildrenAR, by="LEA")
+```
+
+#QUESTION: How many records in new combined dataframe? What is the difference?
+
+```{r}
+abc_not <- School_Address %>% 
+  select(LEA, Name, Address) %>% 
+  anti_join(ChildrenAR, by="LEA")
+```
+
+Df with 261. which ones dropped? Lost two
+
+NEXT, we geocode the addresses using mutate_geocode
+This is a little involved... 
+
+What I did:
+?register_google
+Google API Key https://www.youtube.com/watch?v=1JNwpp5L4vM
+https://console.cloud.google.com/apis/credentials?folder=&organizationId=&project=phonic-botany-269820
+register_google(key = "MY TOP SECRET KEY")
+schools_geocoded <- mutate_geocode(abc, Address)
+write.csv(schools_geocoded, "schools_geocoded.csv")
+
+- **Shortcut!!!**
+
+```{r include=FALSE}
+schools_geocoded <- rio::import("https://raw.githubusercontent.com/profrobwells/HomelessSP2020/master/Data/schools_geocoded.csv")
+```
+
+Next: Simplify the school district names
+
+```{r}
+schools_geocoded$Name_Cleaned <- gsub("SCHOOL", "", schools_geocoded$Name)
+```
+
+```{r}
+schools_geocoded$Name_Cleaned <- gsub("DISTRICT", "", schools_geocoded$Name)
+```
+
+```{r}
+schools_geocoded$Name_Cleaned <- gsub("SCHOOL", "", schools_geocoded$Name_Cleaned) 
+```
+Load map town shapes for Arkansas with Tigris.
+
+If you don't have tigris or ggplot2 or sf installed yet, uncomment and run the line below
+```{r include=FALSE}
+#install.packages("tigris", "sf", "ggplot2")
+library(tigris) 
+library(sf) 
+library(ggplot2)
+```
+```{r}
+# set sf option
+options(tigris_class = "sf")
+options(tigris_use_cache = TRUE)
+```
+
+And we finally load the school district boundary map
+```{r include=FALSE}
+# #Uncomment if you want to run this
+# ar_schools <- school_districts("05")
+```
