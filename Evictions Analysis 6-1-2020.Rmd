@@ -1,0 +1,68 @@
+---
+title: "Evictions analysis 6-1-2020"
+author: "Rob Wells"
+date: "6/1/2020"
+output: html_document
+---
+
+# Analyzing Eviction Court Data From Missouri
+### Data gathered by Abby Zimmardi and Mary Hennigan
+
+
+- **The records come from this website**  
+
+https://www.courts.mo.gov/casenet/cases/searchCases.do
+
+--------------------------------------------------------------------
+# Part 1: Quick Start
+
+```{r include=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+Load Data
+```{r}
+evict <- rio::import("https://docs.google.com/spreadsheets/d/1n5BZi09svs5W9_OXs20GhA3oqg-mpCbWo8_mXnH-EvE/edit#gid=0", which = "Evictions") 
+```
+
+- **Clean names**
+```{r}
+evict <- janitor::clean_names(evict)
+```
+- **Check data fields**
+```{r}
+glimpse(evict)
+```
+
+Delete row 146 with an NA value
+```{r}
+evict <- evict[-c(146), ] 
+```
+
+- **Process dates** 
+```{r}
+#Process dates
+evict$date <- mdy(evict$date_filed)
+evict$year <- year(evict$date)
+```
+
+
+```{r}
+z <- evict %>% 
+  mutate(yearmon = format(date, "%Y-%m")) %>%
+  group_by(yearmon) %>%
+  count(yearmon)
+z
+```
+
+```{r}
+
+ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
+  geom_col() +
+  labs(title="St. Louis City Evictions Per Month",y="Evictions", x= "Year and Month", 
+       caption = "Graphic by Rob Wells and Abby Zimmardi. 6-1-2020", subtitle = "Source: Missouri Court records https://www.courts.mo.gov/casenet/cases/searchCases.do")+
+  theme(legend.position="none") 
+ggsave("StLouis_Evict_6_1_2020",device = "png",width=9,height=6, dpi=500)
+```
+
