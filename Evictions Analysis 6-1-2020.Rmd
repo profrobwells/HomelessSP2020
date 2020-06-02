@@ -1,7 +1,7 @@
 ---
 title: "Evictions analysis 6-1-2020"
 author: "Rob Wells"
-date: "6/1/2020"
+date: "6/2/2020"
 output: html_document
 ---
 
@@ -21,7 +21,7 @@ library(tidyverse)
 library(janitor)
 library(lubridate)
 ```
-Load Data
+Load Data for Evictions tab
 ```{r}
 evict <- rio::import("https://docs.google.com/spreadsheets/d/1n5BZi09svs5W9_OXs20GhA3oqg-mpCbWo8_mXnH-EvE/edit#gid=0", which = "Evictions") 
 ```
@@ -63,6 +63,86 @@ ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
   labs(title="St. Louis City Evictions Per Month",y="Evictions", x= "Year and Month", 
        caption = "Graphic by Rob Wells and Abby Zimmardi. 6-1-2020", subtitle = "Source: Missouri Court records https://www.courts.mo.gov/casenet/cases/searchCases.do")+
   theme(legend.position="none") 
-ggsave("StLouis_Evict_6_1_2020",device = "png",width=9,height=6, dpi=500)
+ggsave("StLouis_Evict_6_1_2020.png",device = "png",width=9,height=6, dpi=500)
 ```
 
+## Parse Plaintiffs - Defendants
+```{r}
+evict$parties <- evict$style_of_case
+
+x <- separate(data = evict, col = style_of_case, into = c("plaintiff", "defendant"), sep = " V ", extra = "merge", fill = "right")
+write.csv(x, "stlouisevictions.6.2.2020,csv")
+```
+
+```{r}
+#Build a simple summary table
+count <- x %>% 
+  select(plaintiff, defendant, date) %>% 
+         group_by(plaintiff) %>% 
+         count(plaintiff) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+count
+```
+
+
+# For 2019 Data - Hennigan
+
+Load Data for Evictions tab
+```{r}
+evict2019 <- rio::import("https://docs.google.com/spreadsheets/d/1n5BZi09svs5W9_OXs20GhA3oqg-mpCbWo8_mXnH-EvE/edit#gid=1145007535", which = "Hennigan Evictions 2019") 
+```
+
+- **Clean names**
+```{r}
+evict2019 <- janitor::clean_names(evict2019)
+```
+- **Check data fields**
+```{r}
+glimpse(evict2019)
+```
+
+- **Process dates** 
+```{r}
+#Process dates
+evict2019$date <- mdy(evict2019$date_filed)
+evict2019$year <- year(evict2019$date)
+```
+
+
+```{r}
+z <- evict2019 %>% 
+  mutate(yearmon = format(date, "%Y-%m")) %>%
+  group_by(yearmon) %>%
+  count(yearmon)
+z
+```
+
+```{r}
+
+ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
+  geom_col() +
+  labs(title="St. Louis City Evictions in 2019",y="Evictions", x= "Year and Month", 
+       caption = "Graphic by Rob Wells and Abby Zimmardi. 6-1-2020", subtitle = "Source: Missouri Court records https://www.courts.mo.gov/casenet/cases/searchCases.do")+
+  theme(legend.position="none") 
+#ggsave("StLouis_Evict_2019_6_1_2020.png",device = "png",width=9,height=6, dpi=500)
+```
+
+## Parse Plaintiffs - Defendants
+```{r}
+evict2019$parties <- evict2019$style_of_case
+
+x <- separate(data = evict2019, col = style_of_case, into = c("plaintiff", "defendant"), sep = " V ", extra = "merge", fill = "right")
+#write.csv(x, "stlouisevictions.6.2.2020,csv")
+```
+
+```{r}
+#Build a simple summary table
+count <- x %>% 
+  select(plaintiff, defendant, date) %>% 
+         group_by(plaintiff) %>% 
+         count(plaintiff) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+count
+```
