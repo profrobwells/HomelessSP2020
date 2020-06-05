@@ -7,6 +7,7 @@ output: html_document
 
 # Analyzing Eviction Court Data From Missouri
 ### Data gathered by Abby Zimmardi and Mary Hennigan
+### Data analysis by Rob Wells
 
 
 - **The records come from this website**  
@@ -111,16 +112,16 @@ evict2019$year <- year(evict2019$date)
 
 
 ```{r}
-z <- evict2019 %>% 
+p <- evict2019 %>% 
   mutate(yearmon = format(date, "%Y-%m")) %>%
   group_by(yearmon) %>%
   count(yearmon)
-z
+p
 ```
 
 ```{r}
 
-ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
+ggplot(p, aes(x=yearmon, y=n, fill=yearmon)) +
   geom_col() +
   labs(title="St. Louis City Evictions in 2019",y="Evictions", x= "Year and Month", 
        caption = "Graphic by Rob Wells and Abby Zimmardi. 6-1-2020", subtitle = "Source: Missouri Court records https://www.courts.mo.gov/casenet/cases/searchCases.do")+
@@ -132,13 +133,13 @@ ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
 ```{r}
 evict2019$parties <- evict2019$style_of_case
 
-x <- separate(data = evict2019, col = style_of_case, into = c("plaintiff", "defendant"), sep = " V ", extra = "merge", fill = "right")
-#write.csv(x, "stlouisevictions.6.2.2020,csv")
+q <- separate(data = evict2019, col = style_of_case, into = c("plaintiff", "defendant"), sep = " V ", extra = "merge", fill = "right")
+#write.csv(q, "stlouisevictions.6.2.2020,csv")
 ```
 
 ```{r}
 #Build a simple summary table
-count <- x %>% 
+count <- q %>% 
   select(plaintiff, defendant, date) %>% 
          group_by(plaintiff) %>% 
          count(plaintiff) %>% 
