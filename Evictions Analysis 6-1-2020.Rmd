@@ -72,19 +72,48 @@ ggsave("StLouis_Evict_6_1_2020.png",device = "png",width=9,height=6, dpi=500)
 evict$parties <- evict$style_of_case
 
 x <- separate(data = evict, col = style_of_case, into = c("plaintiff", "defendant"), sep = " V ", extra = "merge", fill = "right")
-write.csv(x, "stlouisevictions.6.2.2020,csv")
+#write.csv(x, "stlouisevictions.6.2.2020,csv")
 ```
 
+-- **Clean the columns - remove stray spaces**
+
+```{r}
+x$plaintiff <- str_trim(x$plaintiff)
+x$defendant <- str_trim(x$defendant)
+#x$plaintiff <- gsub("[[:punct:]]", "", x$plaintiff)
+#x$plaintiff <- gsub(" ", "_", x$plaintiff)
+```
+
+-- **Special fix for SG Receiver **
+```{r}
+x$plaintiff <- gsub("SG RECEIVER LLC COURT APPT RECEIVER", "SG RECEIVER LLC", x$plaintiff)
+```
+
+
+-- **Summary of Plaintiffs **
 ```{r}
 #Build a simple summary table
-count <- x %>% 
+plaintiff1 <- x %>% 
   select(plaintiff, defendant, date) %>% 
          group_by(plaintiff) %>% 
          count(plaintiff) %>% 
          ungroup() %>% 
          arrange(desc(n))
-count
+plaintiff1
 ```
+
+-- **Summary of Defendants **
+```{r}
+defendants <- x %>% 
+  select(plaintiff, defendant, date) %>% 
+         group_by(defendant) %>% 
+         count(defendant) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+defendants
+```
+
+
 
 
 # For 2019 Data - Hennigan
@@ -109,6 +138,7 @@ glimpse(evict2019)
 evict2019$date <- mdy(evict2019$date_filed)
 evict2019$year <- year(evict2019$date)
 ```
+
 
 
 ```{r}
@@ -137,13 +167,33 @@ q <- separate(data = evict2019, col = style_of_case, into = c("plaintiff", "defe
 #write.csv(q, "stlouisevictions.6.2.2020,csv")
 ```
 
+
+- **Clean the columns - remove stray spaces **
+```{r}
+q$plaintiff <- str_trim(q$plaintiff)
+#x$plaintiff <- gsub("[[:punct:]]", "", x$plaintiff)
+#x$plaintiff <- gsub(" ", "_", x$plaintiff)
+```
+
+
 ```{r}
 #Build a simple summary table
-count <- q %>% 
+plaintiff2 <- q %>% 
   select(plaintiff, defendant, date) %>% 
          group_by(plaintiff) %>% 
          count(plaintiff) %>% 
          ungroup() %>% 
          arrange(desc(n))
-count
+plaintiff2
+```
+
+-- **Summary of Defendants **
+```{r}
+defendant2 <- q %>% 
+  select(plaintiff, defendant, date) %>% 
+         group_by(defendant) %>% 
+         count(defendant) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+defendant2
 ```
