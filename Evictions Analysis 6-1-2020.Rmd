@@ -1,5 +1,5 @@
 ---
-title: "Evictions analysis 6-1-2020"
+title: "Evictions analysis 6-16-2020"
 author: "Rob Wells"
 date: "6/2/2020"
 output: html_document
@@ -26,6 +26,12 @@ Load Data for Evictions tab
 ```{r}
 evict <- rio::import("https://docs.google.com/spreadsheets/d/1n5BZi09svs5W9_OXs20GhA3oqg-mpCbWo8_mXnH-EvE/edit#gid=0", which = "Evictions") 
 ```
+Load Data for Evictions tab
+```{r}
+evict <- rio::import("https://docs.google.com/spreadsheets/d/1n5BZi09svs5W9_OXs20GhA3oqg-mpCbWo8_mXnH-EvE/edit?usp=sharing", which = "Evictions", header=TRUE) 
+```
+
+
 
 - **Clean names**
 ```{r}
@@ -37,9 +43,8 @@ glimpse(evict)
 ```
 
 Delete row 146 with an NA value
-```{r}
 evict <- evict[-c(146), ] 
-```
+
 
 - **Process dates** 
 ```{r}
@@ -62,9 +67,9 @@ z
 ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
   geom_col() +
   labs(title="St. Louis City Evictions Per Month",y="Evictions", x= "Year and Month", 
-       caption = "Graphic by Rob Wells and Abby Zimmardi. 6-1-2020", subtitle = "Source: Missouri Court records https://www.courts.mo.gov/casenet/cases/searchCases.do")+
+       caption = "Graphic by Rob Wells and Abby Zimmardi. 6-16-2020", subtitle = "Source: Missouri Court records https://www.courts.mo.gov/casenet/cases/searchCases.do")+
   theme(legend.position="none") 
-ggsave("StLouis_Evict_6_1_2020.png",device = "png",width=9,height=6, dpi=500)
+ggsave("StLouis_Evict_6_16_2020.png",device = "png",width=9,height=6, dpi=500)
 ```
 
 ## Parse Plaintiffs - Defendants
@@ -102,6 +107,11 @@ plaintiff1 <- x %>%
 plaintiff1
 ```
 
+```{r}
+#Quick fact check on the totals
+sum(plaintiff1$n)
+```
+
 -- **Summary of Defendants **
 ```{r}
 defendants <- x %>% 
@@ -113,8 +123,33 @@ defendants <- x %>%
 defendants
 ```
 
+-- **Total By Zip Code**
+```{r}
+zip <- x %>% 
+  select(plaintiff, defendant_zip, date) %>% 
+         group_by(defendant_zip) %>% 
+         count(defendant_zip) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
 
+write.csv(zip, "stlouis2020_eviction_defendant_zip.csv")
+zip
+```
 
+--**Addresses**
+
+```{r}
+address <- x %>% 
+  select(defendant_address, date) %>% 
+         group_by(defendant_address) %>% 
+         count(defendant_address) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+
+write.csv(address, "stlouis2020_eviction_defendant_zip.csv")
+
+address
+```
 
 # For 2019 Data - Hennigan
 
@@ -197,3 +232,6 @@ defendant2 <- q %>%
          arrange(desc(n))
 defendant2
 ```
+
+
+--**30**
