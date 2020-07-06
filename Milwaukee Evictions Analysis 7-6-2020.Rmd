@@ -1,0 +1,213 @@
+---
+title: "Wisconsin Evictions Analysis"
+author: "Rob Wells"
+date: "7/6/2020"
+output: html_document
+---
+
+# Analyzing Eviction Court Data From Milwaukee
+### Data analysis by Rob Wells
+
+
+- **The records come from this website**  
+https://wcca.wicourts.gov/advanced.html 
+
+--------------------------------------------------------------------
+- **Part 1: Load Libraries and Data**
+
+```{r include=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+Load Data for Evictions tab
+```{r}
+july <- rio::import("https://docs.google.com/spreadsheets/d/1RaY8T3ZZb8q0hv8l9eW0Etey8LVlF97AF4a0rEo5khg/edit?pli=1#gid=357722399", which = "July") 
+```
+Load Data for Evictions tab
+```{r}
+june <- rio::import("https://docs.google.com/spreadsheets/d/1RaY8T3ZZb8q0hv8l9eW0Etey8LVlF97AF4a0rEo5khg/edit?pli=1#gid=0", which = "June") 
+```
+Load Data for Evictions tab
+```{r}
+may <- rio::import("https://docs.google.com/spreadsheets/d/1RaY8T3ZZb8q0hv8l9eW0Etey8LVlF97AF4a0rEo5khg/edit?pli=1#gid=1496576271", which = "May") 
+```
+Load Data for Evictions tab
+```{r}
+april <- rio::import("https://docs.google.com/spreadsheets/d/1RaY8T3ZZb8q0hv8l9eW0Etey8LVlF97AF4a0rEo5khg/edit?pli=1#gid=573768668", which = "April") 
+```
+
+Load Data for Evictions tab
+```{r}
+march <- rio::import("https://docs.google.com/spreadsheets/d/1RaY8T3ZZb8q0hv8l9eW0Etey8LVlF97AF4a0rEo5khg/edit?pli=1#gid=1672355376", which = "March") 
+```
+
+Load Data for Evictions tab
+```{r}
+feb <- rio::import("https://docs.google.com/spreadsheets/d/1RaY8T3ZZb8q0hv8l9eW0Etey8LVlF97AF4a0rEo5khg/edit?pli=1#gid=251485342", which = "February") 
+```
+
+Load Data for Evictions tab
+```{r}
+jan <- rio::import("https://docs.google.com/spreadsheets/d/1RaY8T3ZZb8q0hv8l9eW0Etey8LVlF97AF4a0rEo5khg/edit?pli=1#gid=2098662943", which = "January") 
+```
+
+Combine into single df: 9,500 cases July 6
+```{r}
+evict <- rbind(jan, feb, march, april, may, june, july)
+```
+
+
+- **Clean names**
+```{r}
+evict <- janitor::clean_names(evict)
+```
+- **Check data fields**
+```{r}
+glimpse(evict)
+```
+- **Process dates** 
+```{r}
+#Process dates
+evict$date <- mdy(evict$filing_date)
+evict$year <- year(evict$date)
+```
+
+```{r}
+evict <- evict %>% 
+  mutate(yearmon = format(date, "%Y-%m"))
+```
+
+### Total Eviction Filings by Month in Wisconsin
+```{r}
+z <- evict %>% 
+  group_by(yearmon) %>%
+  count(yearmon)
+z
+```
+
+- **Chart of Wisconsin Eviction Filings in 2020** 
+```{r}
+
+ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
+  geom_col() +
+  labs(title="Wisconsin Eviction Filings Per Month",y="Evictions", x= "", 
+       caption = "Graphic by Rob Wells. 7-6-2020", subtitle = "Source: Wisconsin Circuit Court records")+
+  theme(legend.position="none") 
+ggsave("Wisc_Evict_7_6_2020.png",device = "png",width=9,height=6, dpi=500)
+```
+
+-- **Evictions by County**
+```{r}
+x <- evict %>% 
+  group_by(county_name) %>%
+  count(county_name) %>% 
+  arrange(desc(n))
+head(x)
+```
+
+-- **Milwaukee Subset: 4384 records**
+```{r}
+milw <- evict %>% 
+  filter(county_name == "Milwaukee")
+```
+
+
+-- **Milwaukee Eviction Filings by Month**
+```{r}
+milw %>% 
+  group_by(yearmon) %>%
+  count(yearmon)
+
+```
+
+-- **Chart Milwaukee Eviction Filings by Month**
+```{r}
+milw %>% 
+  group_by(yearmon) %>%
+  count(yearmon) %>% 
+  ggplot(aes(x=yearmon, y=n, fill=yearmon)) +
+  geom_col() +
+  labs(title="Milwaukee Evictions Filings Per Month", y="Evictions", x= "", 
+       caption = "Graphic by Rob Wells. 7-6-2020", subtitle = "Source: Wisconsin Circuit Court records")+
+  theme(legend.position="none") 
+ggsave("Milw_Evict_7_6_2020.png",device = "png",width=9,height=6, dpi=500)
+```
+- **Check data fields**
+```{r}
+glimpse(milw)
+```
+
+-- **Parse Plaintiffs - Defendants in Milwaukee**
+```{r}
+milw$parties <- milw$caption
+
+p <- separate(data = milw, col = caption, into = c("plaintiff", "defendant"), sep = " vs. ", extra = "merge", fill = "right")
+
+head(p)
+
+write.csv(p, "milwevictions.7.6.2020,csv")
+```
+
+-- **Clean the columns - remove stray spaces**
+
+```{r}
+p$plaintiff <- str_trim(p$plaintiff)
+p$defendant <- str_trim(p$defendant)
+p$plaintiff <- gsub("[[:punct:]]", "", p$plaintiff)
+p$defendant <- gsub("[[:punct:]]", "", p$defendant)
+head(p)
+#x$plaintiff <- gsub(" ", "_", x$plaintiff)
+```
+
+-- **Summary of Milwaukee Plaintiffs **
+```{r}
+#Build a simple summary table
+plaintiff1 <- p %>% 
+  select(plaintiff, defendant, date) %>% 
+         group_by(plaintiff) %>% 
+         count(plaintiff) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+plaintiff1
+```
+
+```{r}
+#Quick fact check on the totals
+sum(plaintiff1$n)
+```
+
+-- **Summary of Milwaukee Defendants **
+```{r}
+defendants <- p %>% 
+  select(plaintiff, defendant, date) %>% 
+         group_by(defendant) %>% 
+         count(defendant) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+defendants
+```
+
+-- **Stopped July 6 - Need Address information for the material below**
+
+Total By Zip Code
+zip <- x %>% 
+  select(plaintiff, defendant_zip, date) %>% 
+         group_by(defendant_zip) %>% 
+         count(defendant_zip) %>% 
+         ungroup() %>% 
+        arrange(desc(n))
+write.csv(zip, "stlouis2020_eviction_defendant_zip.csv")
+zip
+
+Addresses
+address <- x %>% 
+  select(defendant_address, date) %>% 
+         group_by(defendant_address) %>% 
+         count(defendant_address) %>% 
+         ungroup() %>% 
+         arrange(desc(n))
+write.csv(address, "stlouis2020_eviction_defendant_zip.csv")
+
+
+--**30**
