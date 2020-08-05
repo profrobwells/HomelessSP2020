@@ -1,7 +1,7 @@
 ---
-title: "Wisconsin Evictions Analysis"
+title: "Milwaukee County and City Evictions Analysis"
 author: "Rob Wells"
-date: "8/4/2020"
+date: "8/5/2020"
 output: html_document
 ---
 
@@ -23,18 +23,31 @@ library(janitor)
 library(lubridate)
 library(kableExtra)
 ```
-Load Data for Evictions tab
+Load Milwaukee City and County Data for Evictions tab
 ```{r}
 milw <- rio::import("https://raw.githubusercontent.com/Howard-Center-Investigations/evictions/master/cleaning/output/cities_original/wi_milwaukee_2019_2020.csv?token=AK7LSTECLG4CSE7CSOGT7AS7FRWA2") 
 ```
-
-
 
 
 - **Clean names**
 ```{r}
 milw <- janitor::clean_names(milw)
 ```
+
+- **Parse Cities **
+```{r}
+milw$defendant_address <- milw$defendant_one_address
+
+x <- separate(data = milw, col = defendant_address, into = c("address", "city", "state_zip"), sep = ", ", extra = "merge", fill = "right")
+```
+
+```{r}
+x %>% 
+  group_by(city) %>%
+  count(city) %>% 
+  arrange(desc(n))
+```
+
 - **Check data fields**
 ```{r}
 glimpse(milw)
@@ -53,7 +66,7 @@ milw <- milw %>%
 ```{r}
 glimpse(milw)
 ```
-### Total Eviction Filings by Month in Wisconsin through July 31, 2020
+### Total Eviction Filings by Month in Milwaukee City and County, Jan. 1 2019-July 31, 2020
 **Wisconsin eviction moratorium was March 27 - May 27, 2020**
 ```{r}
 z <- milw %>% 
@@ -61,19 +74,26 @@ z <- milw %>%
   count(yearmon)
 z
 #write.csv(z, "miltotal.8.4.2020.csv")
+
 ```
 
-- **Chart of Wisconsin Eviction Filings in 2020**  
+-- **Context: Total eviction filings in Wisconsin City and County since Jan. 1, 2019: 19,423**
+```{r}
+summary(z$n)
+sum(z$n)
+```
+
+- **Chart of Milwaukee City and County Eviction Filings, Jan 1. 2019-July 31, 2020**  
 **Wisconsin eviction moratorium was March 27 - May 27, 2020**
 ```{r}
 
 ggplot(z, aes(x=yearmon, y=n, fill=yearmon)) +
   geom_col() +
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title="Wisconsin Eviction Filings Per Month Jan. 2019-July 2020",y="Evictions", x= "", 
+  labs(title="Milwaukee City-County Eviction Filings Per Month Jan. 2019-July 2020",y="Evictions", x= "", 
        caption = "Graphic by Rob Wells. 8-4-2020", subtitle = "Source: Wisconsin Circuit Court records")+
   theme(legend.position="none") 
-ggsave("Wisc_Evict_8_4_2020.png",device = "png",width=9,height=6, dpi=500)
+ggsave("Milw_Evict_8_5_2020.png",device = "png",width=9,height=6, dpi=500)
 ```
 
 -- **Clean the columns - remove stray spaces**
@@ -82,14 +102,14 @@ ggsave("Wisc_Evict_8_4_2020.png",device = "png",width=9,height=6, dpi=500)
 p <- milw
 ```
 
-
-p$plaintiff <- str_trim(p$plaintiff)
-p$defendant <- str_trim(p$defendant)
-p$plaintiff <- gsub("[[:punct:]]", "", p$plaintiff)
-p$defendant <- gsub("[[:punct:]]", "", p$defendant)
+```{r}
+p$plaintiff_one <- str_trim(p$plaintiff_one)
+p$defendant_one <- str_trim(p$defendant_one)
+p$plaintiff_one <- gsub("[[:punct:]]", "", p$plaintiff_one)
+p$plaintiff_one <- gsub("[[:punct:]]", "", p$plaintiff_one)
+p$defendant_one <- gsub("[[:punct:]]", "", p$defendant_one)
 head(p)
-#x$plaintiff <- gsub(" ", "_", x$plaintiff)
-
+```
 
 -- **Summary of Milwaukee Plaintiffs **
 ```{r}
@@ -106,14 +126,18 @@ plaintiff1 <- p %>%
 
 plaintiff1
 ```
+```{r}
+#quick fact check on totals: 19,423 checks out
+sum(plaintiff1$n)
+```
 
---**Context**: During the entire course of this study, the 6,076 eviction records since January 2019, the average number of evictions by a landlord was 3. 
+--**Context**: During the entire course of this study, the 19,423 eviction records since January 2019, the average number of evictions by a landlord was 3. 
 ```{r}
 summary(plaintiff1)
 ```
 
 
--- **Milwaukee All since March 27 2020**
+-- **Milwaukee City and County all since March 27 2020: 2,929 Eviction Filings**
 ```{r}
 x <- p %>% 
   filter(date > '2020-03-27')
@@ -122,8 +146,7 @@ write.csv(x, "mil_all_march27forward.csv")
 
 ```
 
-
--- **Milwaukee evictions / Plaintiffs since March 27 2020**
+-- **Milwaukee City - County evictions / Plaintiffs since March 27 2020**
 ```{r}
 moratorium <- p %>% 
   filter(date > '2020-03-27') %>% 
@@ -137,7 +160,12 @@ moratorium <- p %>%
 
 ```
 
--- **Milwaukee Plaintiffs since March 27 2020**
+--**Context: Total Evictions in Milwaukee City - County since March 27, 2020: 2,929**
+```{r}
+sum(moratorium$n)
+```
+
+-- **Milwaukee City - County Plaintiffs since March 27 2020**
 ```{r}
 top <- p %>% 
   filter(date > '2020-03-27') %>% 
@@ -149,19 +177,22 @@ top <- p %>%
          arrange(yearmon) %>% 
          arrange(desc(n))
 write.csv(top, "mil_evictors_mo_8_4_2020.csv")
+head(top)
 ```
 
---**Context**: Since the moratorium, the 1,406 eviction records since March 27, 2020, the average number of evictions by a landlord was 2. 
-Since the moratorium started in March 27, 2020, there have been 1,406 evictions. Berrada alone (checking the other entities soon) had 306 evictions, or 22% of the total. One of every five evictions was filed by Berrada.  On average, a landlord would have evicted just three people. Berrada evicted 306.
+--**Context**: Since the moratorium, the 2,929 eviction records since March 27, 2020, the average number of evictions by a landlord was 2. 
+
 ```{r}
 summary(moratorium)
 ```
 
-##Radical Cleaning of Plaintiffs
+##Cleaning of Plaintiffs Names, Normalizing and Grouping
 
 ```{r}
 p2 <- p
+```
 
+```{r}
 p2$plaintiff_fixed <- p2$plaintiff_one
 ```
 
@@ -170,34 +201,10 @@ p2$plaintiff_fixed <- p2$plaintiff_one
 glimpse(p2)
 ```
 
-
---Clean plaintiff_fixed
-
-```{r}
-p2$plaintiff_fixed <- str_remove(str_replace_all(str_remove(p2$plaintiff_fixed, "^.*\\n"), "\\n", " "), "\\|.*")
-```
-
-```{r}
-p2$plaintiff_fixed <- str_trim(p2$plaintiff_fixed)
-p2$plaintiff_fixed <- tolower(p2$plaintiff_fixed)
-```
-
---Clean plaintiff_one
-
-```{r}
-p2$plaintiff_one <- str_remove(str_replace_all(str_remove(p2$plaintiff_one, "^.*\\n"), "\\n", " "), "\\|.*")
-```
-
-```{r}
-p2$plaintiff_one <- str_trim(p2$plaintiff_one)
-p2$plaintiff_one <- tolower(p2$plaintiff_one)
-```
-
 --**Rename and Reclassify Landlords, Substitute top names and normalize**
 ```{r}
 p2 <- p2 %>% 
-  mutate(plaintiff_fixed = case_when(plaintiff_one=="highland llc" ~ "berrada",
-                                     plaintiff_one=="meaux park llc" ~ "berrada",
+  mutate(plaintiff_fixed = case_when(plaintiff_one=="meaux park llc" ~ "berrada",
                                      plaintiff_one=="spring court apartments llc" ~ "berrada",
                                      plaintiff_one=="dineen park townhomes llc" ~ "berrada",
                                      plaintiff_one=="arbor gardens apartments llc" ~ "berrada",
@@ -206,30 +213,22 @@ p2 <- p2 %>%
                                      plaintiff_one=="garden terrace homes llc" ~ "berrada",
                                      plaintiff_one=="good hope townhomes ii llc" ~ "berrada",
                                      plaintiff_one=="good hope townhomes llc" ~ "berrada",
-                                     plaintiff_one=="greenbrook place apartments llc" ~ "berrada",
                                      plaintiff_one=="colonial pointe ii apartments llc" ~ "berrada",
                                      plaintiff_one=="colonial pointe il apartments llc" ~ "berrada",
                                      plaintiff_one=="colonial pointe i apartments llc" ~ "berrada",
                                      plaintiff_one=="mariners pointe apartments llc" ~ "berrada",
                                      plaintiff_one=="berrada properties llc" ~ "berrada",
                                      plaintiff_one=="yb florist llc" ~ "berrada",
-                                     plaintiff_one=="yb florist,llc" ~ "berrada",
-                                     plaintiff_one=="yb florist, llc" ~ "berrada",
                                      plaintiff_one=="yb medford llc" ~ "berrada",
                                      plaintiff_one=="yb silver spring llc" ~ "berrada",
                                      plaintiff_one=="yb victory llc" ~ "berrada",
-                                     plaintiff_one=="yb victory llc" ~ "berrada",
-                                     plaintiff_one=="paul e hurst, co berrada properties" ~ "berrada",
                                      plaintiff_one=="falcon crest llc" ~ "berrada",
-                                     plaintiff_one=="falcon crest llc" ~ "berrada",
-                                     plaintiff_one=="	wisniewski, michael s" ~ "michael_s_wisniewski",
-                                     plaintiff_one=="bruckner, daniel w" ~ "daniel_w_bruckner",
-                                     plaintiff_one=="	nawrocki, gregory w" ~ "gregory_w_nawrocki",
-                                     plaintiff_one=="nawrocki, gregory" ~ "gregory_w_nawrocki",
-                                     plaintiff_one=="nawrocki, gragory w" ~ "gregory_w_nawrocki",
-                                     plaintiff_one=="nawriocki, gregory w" ~ "gregory_w_nawrocki",
-                                     plaintiff_one=="nawrocki, gregory w" ~ "gregory_w_nawrocki",
-                                     plaintiff_one=="martin, bruce" ~ "bruce_martin",
+                                     plaintiff_one=="wisniewski michael s" ~ "michael_s_wisniewski",
+                                     plaintiff_one=="bruckner daniel w" ~ "daniel_w_bruckner",
+                                     plaintiff_one=="nawrocki gregory w" ~ "gregory_w_nawrocki",
+                                     plaintiff_one=="nawrocki gregory" ~ "gregory_w_nawrocki",
+                                     plaintiff_one=="nawrocki gragory w" ~ "gregory_w_nawrocki",
+                                     plaintiff_one=="martin bruce" ~ "bruce_martin",
                                      plaintiff_one=="housing authority of the city of milwaukee" ~ "milwaukee_city_housing_authority",
                                      plaintiff_one=="city of milwaukee" ~ "milwaukee_city",
                                      plaintiff_one=="city  of milwaukee" ~ "milwaukee_city",
@@ -238,16 +237,25 @@ p2 <- p2 %>%
                                      plaintiff_one=="good hope townhomes ii llc" ~ "good_hope_townhomes",
                                      plaintiff_one=="good hope townhomes llc" ~ "good_hope_townhomes",
                                      plaintiff_one=="howard and th street holding company" ~ "howard_76_st_holding_co",
-                                     plaintiff_one=="maas, robert" ~ "robert_maas",
-                                     plaintiff_one=="maas, robert j" ~ "robert_maas",
+                                     plaintiff_one=="maas robert" ~ "robert_maas",
+                                     plaintiff_one=="maas robert j" ~ "robert_maas",
                                     TRUE~plaintiff_one)) 
 
 ```
 
 
--- **Summary of Cleaned Milwaukee Plaintiffs **
+--**Simple table for fact checking on normalization of names**
 ```{r}
-#Build a simple summary table
+pp2 <- p2 %>% 
+  select(plaintiff_one, plaintiff_fixed)
+```
+
+
+--**Context**: Berrada properties and its 18 affiliates were responsible for 2,223 eviction filings, or at least 11% of all eviction filings since January 2019.
+
+
+```{r}
+#Summary of Cleaned Milwaukee Plaintiffs
 plaintiff2 <- p2 %>% 
   select(plaintiff_fixed, date) %>% 
          group_by(plaintiff_fixed) %>% 
@@ -261,11 +269,9 @@ write.csv(plaintiff2, "milplaintiff.cleaned.8.4.2020.csv")
 plaintiff2
 ```
 
---**Context**: Berrada properties and its affiliates were responsible for at least 39% of all eviction filings since January 2019.
-
-
--- **Cleaned Milwaukee Plaintiffs since March 27 2020**
+--**Context: Berrada was responsible for more than one out of every three evictions in Milwaukee since March 27, 2020.** Since the moratorium started in March 27, 2020, there have been 2,929 evictions. Berrada and its 18 affiliated entities had 487 evictions, or 17% of the total.
 ```{r}
+#Cleaned Milwaukee Plaintiffs since March 27 2020
 top2 <- p2 %>% 
   filter(date > '2020-03-27') %>% 
   select(plaintiff_fixed, yearmon) %>% 
@@ -274,25 +280,9 @@ top2 <- p2 %>%
          filter(n > 5) %>% 
          ungroup() %>% 
          arrange(desc(n))
-write.csv(top2, "cleaned_mil_evictors_mo_8_4_2020.csv")
+write.csv(top2, "cleaned_mil_evictors_since_March27_8_5_2020.csv")
 top2
 ```
-
---**Context: Berrada was responsible for more than one out of every three evictions in Milwaukee since March 27, 2020.** Since the moratorium started in March 27, 2020, there have been 1,406 evictions. Berrada and its affiliated entities had 518 evictions, or 37% of the total.
-
-```{r}
-top2 <- p2 %>% 
-  filter(date > '2020-03-27') %>% 
-  select(plaintiff_fixed, yearmon) %>% 
-         group_by(plaintiff_fixed, yearmon) %>% 
-         count(plaintiff_fixed) %>% 
-         filter(n > 5) %>% 
-         ungroup() %>% 
-         arrange(yearmon) %>% 
-         arrange(desc(n))
-write.csv(top, "cleaned_mil_evictors_mo_8_4_2020.csv")
-```
-
 
 
 --**Top with top 50 Results of Milwaukee Landlords**
@@ -303,6 +293,25 @@ top2 %>%
   kable_styling("striped")
 
 ```
+
+
+--**Cleaned Milwaukee Plaintiffs by Month since March 27 2020**
+```{r}
+top3 <- p2 %>% 
+  filter(date > '2020-03-27') %>% 
+  select(plaintiff_fixed, yearmon) %>% 
+         group_by(plaintiff_fixed, yearmon) %>% 
+         count(plaintiff_fixed) %>% 
+         filter(n > 5) %>% 
+         ungroup() %>% 
+         arrange(yearmon) %>% 
+         arrange(desc(n))
+write.csv(top3, "cleaned_mil_evictors_mo_8_4_2020.csv")
+head(top3)
+```
+
+
+
 
 
 
