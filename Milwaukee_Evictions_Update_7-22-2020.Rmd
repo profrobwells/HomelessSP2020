@@ -251,7 +251,7 @@ pp2 <- p2 %>%
 ```
 
 
---**Context**: Berrada properties and its 18 affiliates were responsible for 2,223 eviction filings, or at least 11% of all eviction filings since January 2019.
+--**Context**: Berrada properties and its 18 affiliates were responsible for 2,223 eviction filings in Milwaukee City and County, or at least 11% of all eviction filings since January 2019.
 
 
 ```{r}
@@ -269,7 +269,7 @@ write.csv(plaintiff2, "milplaintiff.cleaned.8.4.2020.csv")
 plaintiff2
 ```
 
---**Context: Berrada was responsible for more than one out of every three evictions in Milwaukee since March 27, 2020.** Since the moratorium started in March 27, 2020, there have been 2,929 evictions. Berrada and its 18 affiliated entities had 487 evictions, or 17% of the total.
+--**Context: Berrada was responsible for 17% of eviction filings in Milwaukee City and County since March 27, 2020.** Since the moratorium started in March 27, 2020, there have been 2,929 evictions. Berrada and its 18 affiliated entities had 487 evictions, or 17% of the total.
 ```{r}
 #Cleaned Milwaukee Plaintiffs since March 27 2020
 top2 <- p2 %>% 
